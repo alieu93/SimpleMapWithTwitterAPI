@@ -2,10 +2,14 @@ package adamlieu.simplemapwithtwitterapi;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.DialogFragment;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
@@ -20,18 +24,30 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.GroundOverlay;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import twitter4j.*;
@@ -41,9 +57,14 @@ import twitter4j.conf.ConfigurationBuilder;
 
 public class TwitterMapsActivity extends FragmentActivity {
 
-    //static List<twitter4j.Status> tweets;
+    EditText edit;
+    Button searchButton;
+    RelativeLayout relative;
+    boolean hasSearched = false;
+
 
     Circle circle;
+
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     //static ConfigurationBuilder cb = new ConfigurationBuilder();
@@ -59,8 +80,24 @@ public class TwitterMapsActivity extends FragmentActivity {
     private DrawerLayout mDrawerLayout;
     private ArrayAdapter<String> mAdapter;
 
+    //Tweets
+    List<twitter4j.Status> tweets;
+    List<twitter4j.Status> tweetsWithGeo = new ArrayList<>();
+    //Twitter profile pictures as bitmaps
+    private List<Bitmap> image = new ArrayList<>();
+    //Twitter profile pictures as overlays
+    private List<GroundOverlayOptions> overlaysOptions = new ArrayList<>();
+    //Twitter embed URLs
+    private List<String> mediaEmbeds = new ArrayList<>();
+
+
+    private List<LatLng> cachePos = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        /*relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
+        edit = (EditText) relative.findViewById(R.id.EditText1);
+        searchButton = (Button) relative.findViewById(R.id.button1);*/
         /*cb.setDebugEnabled(true)
                 .setOAuthConsumerKey("3L9ScMzKYZSy8lmwEJqT7mIS5")
                 .setOAuthConsumerSecret("OOd5DnGNagJ4PpkcIZxbNa6pXQEQKTPLGfyW86K2nbVkxwR2UB")
@@ -104,22 +141,87 @@ public class TwitterMapsActivity extends FragmentActivity {
         addDrawer();
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
 
-        new RetrieveTimeline().execute("Test");
-        /*
-        try {
-            List<Status> statuses = twit.getHomeTimeline();
-            for(Status status : statuses){
-                //System.out.println(status.getUser().getName() + ":" + status.getText());
-                Log.v("TEST TWIT", status.getUser().getName() + ":" + status.getText());
+
+
+        //new RetrieveTimeline().execute("Test");
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            final Context context = getApplicationContext();
+
+            @Override
+            public void onMapClick(LatLng position) {
+                /*
+                LatLng center = circle.getCenter();
+                double radius = circle.getRadius();
+                float[] distance = new float[1];
+                Location.distanceBetween(position.latitude, position.longitude, center.latitude, center.longitude, distance);
+                boolean clicked = distance[0] < radius;*/
+
+                //for(GroundOverlayOptions i : overlaysOptions){
+                for (int i = 0; i < overlaysOptions.size(); i++) {
+
+                    //LatLng center = i.getLocation();
+                    //double radius = i.getWidth() / 2;
+                    LatLng center = overlaysOptions.get(i).getLocation();
+                    double radius = overlaysOptions.get(i).getWidth() / 2;
+                    float[] distance = new float[1];
+                    Location.distanceBetween(position.latitude, position.longitude,
+                            center.latitude, center.longitude, distance);
+                    boolean clicked = distance[0] < radius;
+
+
+                    if (clicked) {
+                        //Toast.makeText(context, "CLICKED!", Toast.LENGTH_SHORT).show();
+                        /*
+                        Toast.makeText(context, "\t" + tweetsWithGeo.get(i).getUser().getName() + "\n\n" +
+                                tweetsWithGeo.get(i).getText(),
+                                Toast.LENGTH_SHORT).show();*/
+                        /*
+                        AlertDialog.Builder builder = new AlertDialog.Builder(TwitterMapsActivity.this);
+                        builder.setMessage(tweetsWithGeo.get(i).getText())
+                                .setTitle(tweetsWithGeo.get(i).getUser().getName());
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+
+                            }
+                        });
+                        AlertDialog dialog = builder.create();
+                        dialog.show();*/
+                        FragmentManager fm = getFragmentManager();
+                        DialogFragment newFragment = TweetFragment.newInstance(
+                                tweetsWithGeo.get(i).getUser().getName(),
+                                tweetsWithGeo.get(i).getText(),
+                                mediaEmbeds.get(i));
+                        newFragment.show(fm, tweetsWithGeo.get(i).getUser().getName());
+
+                    }
+
+                }
             }
-        } catch (TwitterException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }*/
+        });
+
+        relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
+        edit = (EditText) relative.findViewById(R.id.EditText1);
+        searchButton = (Button) relative.findViewById(R.id.button1);
+
+        searchButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view){
+                if(edit.getText().toString() != null){
+                    if(!hasSearched) {
+                        String test = edit.getText().toString();
+                        Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
+                        new RetrieveTimeline().execute(test);
+                        hasSearched = true;
+                    }
+                }
+            }
+        });
 
     }
 
+
     private class RetrieveTimeline extends AsyncTask<String, String, String> {
+        Context context = getApplicationContext();
         ConfigurationBuilder cb = new ConfigurationBuilder()
                 .setDebugEnabled(true)
                 .setOAuthConsumerKey("3L9ScMzKYZSy8lmwEJqT7mIS5")
@@ -130,17 +232,15 @@ public class TwitterMapsActivity extends FragmentActivity {
 
         TwitterFactory tf = new TwitterFactory(cb.build());
         Twitter twit = tf.getInstance();
-        List<twitter4j.Status> tweets;
-        //List<twitter4j.Status> statuses;
 
         double lat = 43.6532;
         double lon = -79.3832;
         int radius = 100;
         String mesUnit = "km";
 
-        Query query = new Query("movie%20:(").geoCode(new GeoLocation(lat, lon), radius, mesUnit);
-
         protected String doInBackground(String... test){
+            Query query = new Query(test[0]).geoCode(new GeoLocation(lat, lon), radius, mesUnit);
+            Log.v("Query", test[0]);
             /*
             try {
                 statuses = twit.getHomeTimeline();
@@ -149,39 +249,113 @@ public class TwitterMapsActivity extends FragmentActivity {
                     Log.v("TEST TWIT", status.getUser().getName() + ":" + status.getText());
                 }*/
             try{
-                query.count(250);
+                query.count(500);
                 QueryResult result = twit.search(query);
                 tweets = result.getTweets();
             } catch (TwitterException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+
+            for(twitter4j.Status tweet : tweets) {
+                //String url = tweet.getUser().getProfileImageURL();
+                String url = tweet.getUser().getBiggerProfileImageURL();
+                try {
+                    InputStream in = new BufferedInputStream(new URL(url).openStream(), 4096);
+                    Bitmap bitmap = BitmapFactory.decodeStream(in);
+                    image.add(bitmap);
+                } catch (IOException e) {
+                    Log.e("URL IO", "Error reading URL");
+                }
+
+                /*
+                //Test: Just for getting the embedded URL for tweets
+                String mediaURL = null;
+                for(MediaEntity mediaEnt : tweet.getMediaEntities()) {
+                    mediaURL = mediaEnt.getMediaURL();
+                    //Log.v("MEDIAENTITY: ", mediaEnt.getMediaURL());
+                    counter++;
+                }
+                if(mediaURL != null){
+                    mediaEmbeds.add(mediaURL);
+                } else {
+                    mediaEmbeds.add(null);
+                }
+                Log.v("MediaEntity Counter: ", "" + counter);
+                */
+            }
             return test[0];
         }
 
         protected void onPostExecute(String string){
+            Toast.makeText(context, "Search complete, displaying " + tweets.size() + " results." , Toast.LENGTH_SHORT).show();
             Log.v("TESTTWIT ", "" + tweets.size());
+            int count = 0;
+            //Toast.makeText(context, "image array: " + image.size(), Toast.LENGTH_LONG).show();
+            //Toast.makeText(context, "tweets array: " + tweets.size(), Toast.LENGTH_LONG).show();
+            Log.v("ARRAY TEST", "image array: " + image.size() + "tweets array: " + tweets.size());
+            /*
+            for(String x : mediaEmbeds){
+                Log.v("MediaEntity: ", "" + x);
+            }*/
+            int counter = 0;
             for(twitter4j.Status tweet : tweets) {
-                /*
+
                 Log.v("TESTTWIT ", tweet.getUser().getScreenName()
                         + " --- " + tweet.getText()
                         + " --- " + tweet.getCreatedAt()
-                        + " --- " + tweet.getGeoLocation());
-                        */
+                        + " --- " + tweet.getGeoLocation()
+                        + " --- " + tweet.getUser().getBiggerProfileImageURL());
+
                 if(tweet.getGeoLocation() != null) {
+                    tweetsWithGeo.add(tweet);
+
+                    //Adding the embed URLs to a separate list
+                    String mediaURL = null;
+                    for(MediaEntity mediaEnt : tweet.getMediaEntities()) {
+                        mediaURL = mediaEnt.getMediaURL();
+                        //Log.v("MEDIAENTITY: ", mediaEnt.getMediaURL());
+                        counter++;
+                    }
+                    if(mediaURL != null){
+                        mediaEmbeds.add(mediaURL);
+                    } else {
+                        mediaEmbeds.add(null);
+                    }
+                    Log.v("MediaEntity Counter: ", "" + counter);
+
+                    /*
                     mMap.addCircle(new CircleOptions()
                             .center(new LatLng(tweet.getGeoLocation().getLatitude(),
                                     tweet.getGeoLocation().getLongitude()))
                             .radius(25)
                             .strokeWidth(0)
-                            //.fillColor(0x7F96B0FF));
-                            .fillColor(Color.BLUE));
+                                    //.fillColor(0x7F96B0FF));
+                            .fillColor(Color.BLUE));*/
 
-                    mMap.addMarker(new MarkerOptions().position(new LatLng(tweet.getGeoLocation().getLatitude(),
-                            tweet.getGeoLocation().getLongitude()))
-                        .title(tweet.getUser().getScreenName())
-                        .snippet(tweet.getText()));
+                    //String url = tweet.getUser().getProfileImageURL();
+                    LatLng loc = new LatLng(tweet.getGeoLocation().getLatitude(),
+                            tweet.getGeoLocation().getLongitude());
+
+                    //for(Bitmap bit : image) {
+                    if(count < tweets.size()) {
+                        Log.v("Array", "" + count);
+                        if(count == image.size()){
+                            break;
+                        }
+                        if(image.get(count) != null) {
+                            GroundOverlayOptions overlay = new GroundOverlayOptions()
+                                    .image(BitmapDescriptorFactory.fromBitmap(image.get(count)))
+                                    .position(loc, 80f);
+                            overlaysOptions.add(overlay);
+                        }
+                    }
+                    for(GroundOverlayOptions i : overlaysOptions){
+                        mMap.addGroundOverlay(i);
+                    }
+
                 }
+                count++;
             }
         }
     }

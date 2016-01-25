@@ -6,6 +6,16 @@
     android:layout_height="match_parent"
     tools:context="adamlieu.simplemapwithtwitterapi.TwitterMapsActivity" >
 
+    <!-- Maps -->
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/map"
+        tools:context=".CanvasMap"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_below="@+id/RelativeLayout1"/>
+
     <!-- Main content view -->
     <FrameLayout
         android:id="@+id/content_frame"
@@ -20,11 +30,26 @@
         android:layout_gravity="left|start"
         android:background="#ffeeeeee" />
 
-    <!-- Maps -->
-    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" android:id="@+id/map"
-        tools:context=".CanvasMap"
-        android:name="com.google.android.gms.maps.SupportMapFragment" />
+    <RelativeLayout
+        android:id="@+id/RelativeLayout1"
+        android:layout_above="@+id/map"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/button1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search"
+            android:layout_alignParentRight="true" />
+        <EditText
+            android:id="@+id/EditText1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:layout_toLeftOf="@id/button1" />
+    </RelativeLayout>
+
+
 </android.support.v4.widget.DrawerLayout>
