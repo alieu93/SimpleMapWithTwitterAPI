@@ -43,6 +43,10 @@
             android:name=".TweetFragment"
             android:label="@string/title_activity_tweet_fragment" >
         </activity>
+        <activity
+            android:name=".TwitterMapsActivity2"
+            android:label="@string/title_activity_twitter_maps2" >
+        </activity>
     </application>
 
 </manifest>
