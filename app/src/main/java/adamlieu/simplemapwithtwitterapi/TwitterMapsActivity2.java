@@ -2,27 +2,38 @@ package adamlieu.simplemapwithtwitterapi;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -39,13 +50,14 @@ import java.util.List;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
 
-    private List<LatLng> cachePos = new ArrayList<>();
 
     private GoogleMap mMap;
     LocationManager locManager;// = (LocationManager)getSystemService(LOCATION_SERVICE);
     String provider;
     Location location;
     Criteria criteria = new Criteria();
+    List<LatLng> cachePos = new ArrayList<>();
+
 
 
     @Override
@@ -83,60 +95,29 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mMap.getUiSettings().setCompassEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
-
-        try {
-            String json = loadJSON();
-            int limit = 2000;
-            int counter = 0;
-            for(LatLng pos : cachePos){
-                mMap.addCircle(new CircleOptions()
-                        .center(new LatLng(pos.latitude, pos.longitude))
-                        .radius(25)
-                        .strokeWidth(0)
-                        //.fillColor(0x7F96B0FF));
-                        .fillColor(Color.BLUE));
-                Log.v("Adding point:", "" + pos);
-                counter++;
-                if(counter > limit)
-                    break;
-            }
-        } catch (JSONException ex){
-            ex.printStackTrace();
-        }
-
         /*
         try {
-
-            JSONObject obj = new JSONObject(json);
-            JSONObject coords = new JSONObject(obj.get("coordinates").toString());
-            JSONArray latlng = coords.getJSONArray("coordinates");
-            Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
-            JSONArray nameArray = obj.names();
-            if(nameArray != null){
-                int len = nameArray.length();
-                for(int i = 0; i<len; i++){
-                    Log.v("JSON Objects:", nameArray.get(i).toString());
-                }
-            }
+            //int limit = 8000;
+            //loadJSON(limit);
+            //circleToMap(cachePos, limit);
         } catch (JSONException ex){
             ex.printStackTrace();
         }*/
+        Integer limit = 10000;
+        new RetrieveTweets().execute(limit);
     }
 
-    public String loadJSON() throws JSONException{
-        String json = null;
+    public List<LatLng> loadJSON(int limit) throws JSONException{
+        //String json = null;
+        List<LatLng> list = new ArrayList<>();
         try{
-            InputStream is = getResources().openRawResource(R.raw.oshawa);
+            InputStream is = getResources().openRawResource(R.raw.toronto);
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-            /*int size = is.available();
-            byte[] buffer = new byte[size];
-
-            is.read(buffer);*/
             StringBuilder sb = new StringBuilder();
             String line;
             //Read just coordinates for now
             int counter = 0;
-            while(((line = reader.readLine()) != null)){
+            while(((line = reader.readLine()) != null) && counter < limit){
                 JSONObject obj = new JSONObject(line);
                 if(!obj.isNull("coordinates")) {
                     JSONObject coords = new JSONObject(obj.get("coordinates").toString());
@@ -148,7 +129,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     Double lat = Double.parseDouble(latlng.get(1).toString());
                     double lng = Double.parseDouble(latlng.get(0).toString());
                     LatLng pos = new LatLng(lat, lng);
-                    cachePos.add(pos);
+                    //cachePos.add(pos);
+                    list.add(pos);
                     counter++;
                     Log.v("Coordinates:", "" + lat + " : " + lng);
                     Log.v("Coordinates Counter:", "" + counter);
@@ -160,7 +142,55 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             ex.printStackTrace();
             return null;
         }
-        return json;
+        return list;
+    }
+
+    private class RetrieveTweets extends AsyncTask<Integer, Void, Integer> {
+        Context context = getApplicationContext();
+        protected Integer doInBackground(Integer... test){
+            try{
+                cachePos = loadJSON(test[0]);
+            } catch (JSONException ex){
+                ex.printStackTrace();
+            }
+            return test[0];
+        }
+
+        protected void onPostExecute(Integer test){
+            Toast.makeText(context, "Retrieval complete, displaying " + test + " Tweets." , Toast.LENGTH_SHORT).show();
+            circleToMap(cachePos);
+
+        }
+    }
+
+    private void circleToMap(List<LatLng> pos){
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+
+        int d = 100;
+        Bitmap bitmap = Bitmap.createBitmap(d,d,Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setColor(0x7F96B0FF);
+        canvas.drawCircle(d/2, d/2, d/2, paint);
+
+        BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(bitmap);
+
+        int counter = 0;
+
+        //TODO: Separate this to allow for continuous adding of things after the fact
+        for(LatLng i : pos) {
+            mMap.addGroundOverlay(new GroundOverlayOptions()
+                            .image(desc)
+                            .position(i, 150)
+            );
+            Log.v("Adding point:", "" + i);
+            counter++;
+
+            //if(counter > limit) break;
+        }
     }
 
 
@@ -215,7 +245,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             //mMap.addMarker(new MarkerOptions().position(currentPos).title("UOIT"));
 
             //Controls the camera so it would zoom into current position
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 15);
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 13);
             mMap.animateCamera(cameraUpdate);
         }
     }
