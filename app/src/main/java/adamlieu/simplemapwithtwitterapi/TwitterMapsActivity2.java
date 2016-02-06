@@ -45,7 +45,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
@@ -57,6 +61,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     Location location;
     Criteria criteria = new Criteria();
     List<LatLng> cachePos = new ArrayList<>();
+    BitmapDescriptor desc;
 
 
 
@@ -103,8 +108,69 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         } catch (JSONException ex){
             ex.printStackTrace();
         }*/
-        Integer limit = 10000;
+        Integer limit = 1000;
         new RetrieveTweets().execute(limit);
+    }
+
+    private String convertDate(String tweetDate){
+        String[] elements = tweetDate.split("\\s+");
+        //Log.v("convertDate", elements[0] + elements[1] + elements[2]);
+        String month = null;
+        switch(elements[1]){
+            case "Jan":
+                month = "01";
+                break;
+            case "Feb":
+                month = "02";
+                break;
+            case "Mar":
+                month = "03";
+                break;
+            case "Apr":
+                month = "04";
+                break;
+            case "May":
+                month = "05";
+                break;
+            case "Jun":
+                month = "06";
+                break;
+            case "Jul":
+                month = "07";
+                break;
+            case "Aug":
+                month = "08";
+                break;
+            case "Sep":
+                month = "09";
+                break;
+            case "Oct":
+                month = "10";
+                break;
+            case "Nov":
+                month = "11";
+                break;
+            case "Dec":
+                month = "12";
+                break;
+        }
+        String date = month + "-" + elements[2] + "-" + elements[5];
+
+        /*
+        SimpleDateFormat format = new SimpleDateFormat("MM-dd-yyyy");
+        Calendar cal = Calendar.getInstance();
+        Integer day = Integer.parseInt(elements[2]);
+        Integer monthInt = Integer.parseInt(month);
+        Integer year = Integer.parseInt(elements[5]);
+        cal.set(year, monthInt, day);
+        //Can't seem to actually increment a day, so increment a month and a day then decrement a month
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        cal.add(Calendar.MONTH, -1);
+        Log.v("Calendar Operations", format.format(cal.getTime()));*/
+
+
+        Log.v("convertDate", date);
+        return date;
     }
 
     public List<LatLng> loadJSON(int limit) throws JSONException{
@@ -117,22 +183,29 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             String line;
             //Read just coordinates for now
             int counter = 0;
+
             while(((line = reader.readLine()) != null) && counter < limit){
                 JSONObject obj = new JSONObject(line);
                 if(!obj.isNull("coordinates")) {
                     JSONObject coords = new JSONObject(obj.get("coordinates").toString());
                     JSONArray latlng = coords.getJSONArray("coordinates");
+
+                    Log.v("Tweet Text:", obj.get("text").toString());
+                    Log.v("Tweet Date:", obj.get("created_at").toString());
+                    convertDate(obj.get("created_at").toString());
+
                     //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
                     //************************
                     //TWITTER USES LONGITUDE THEN LATITUDE
                     //************************
+
+
                     Double lat = Double.parseDouble(latlng.get(1).toString());
                     double lng = Double.parseDouble(latlng.get(0).toString());
                     LatLng pos = new LatLng(lat, lng);
-                    //cachePos.add(pos);
                     list.add(pos);
                     counter++;
-                    Log.v("Coordinates:", "" + lat + " : " + lng);
+                    //Log.v("Coordinates:", "" + lat + " : " + lng);
                     Log.v("Coordinates Counter:", "" + counter);
                 }
             }
@@ -148,22 +221,30 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     private class RetrieveTweets extends AsyncTask<Integer, Void, Integer> {
         Context context = getApplicationContext();
         protected Integer doInBackground(Integer... test){
+            final int num = test[0];
+            TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
+                public void run(){
+                    Toast.makeText(context, "Retrieving " + num + " tweets", Toast.LENGTH_LONG).show();
+                }
+            });
             try{
                 cachePos = loadJSON(test[0]);
             } catch (JSONException ex){
                 ex.printStackTrace();
             }
+
             return test[0];
         }
 
         protected void onPostExecute(Integer test){
             Toast.makeText(context, "Retrieval complete, displaying " + test + " Tweets." , Toast.LENGTH_SHORT).show();
             circleToMap(cachePos);
-
         }
     }
 
+
     private void circleToMap(List<LatLng> pos){
+
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -179,15 +260,13 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(bitmap);
 
         int counter = 0;
-
-        //TODO: Separate this to allow for continuous adding of things after the fact
         for(LatLng i : pos) {
             mMap.addGroundOverlay(new GroundOverlayOptions()
                             .image(desc)
                             .position(i, 150)
             );
             Log.v("Adding point:", "" + i);
-            counter++;
+            //counter++;
 
             //if(counter > limit) break;
         }
