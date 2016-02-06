@@ -24,6 +24,10 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -53,6 +57,10 @@ import java.util.Date;
 import java.util.List;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
+    EditText edit;
+    Button searchButton;
+    RelativeLayout relative;
+    boolean hasSearched = false;
 
 
     private GoogleMap mMap;
@@ -108,8 +116,22 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         } catch (JSONException ex){
             ex.printStackTrace();
         }*/
-        Integer limit = 1000;
-        new RetrieveTweets().execute(limit);
+        //Integer limit = 1000;
+        relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
+        edit = (EditText) relative.findViewById(R.id.EditText1);
+        searchButton = (Button) relative.findViewById(R.id.button1);
+        searchButton.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View view){
+                if(edit.getText().toString() != null){
+                    if(!hasSearched) {
+                        String test = edit.getText().toString();
+                        Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
+                        new RetrieveTweets().execute(test);
+                        hasSearched = true;
+                    }
+                }
+            }
+        });
     }
 
     private String convertDate(String tweetDate){
@@ -173,7 +195,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         return date;
     }
 
-    public List<LatLng> loadJSON(int limit) throws JSONException{
+    public List<LatLng> loadJSON(int limit, String text) throws JSONException{
         //String json = null;
         List<LatLng> list = new ArrayList<>();
         try{
@@ -186,27 +208,32 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             while(((line = reader.readLine()) != null) && counter < limit){
                 JSONObject obj = new JSONObject(line);
-                if(!obj.isNull("coordinates")) {
-                    JSONObject coords = new JSONObject(obj.get("coordinates").toString());
-                    JSONArray latlng = coords.getJSONArray("coordinates");
+                if(obj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
+                    if (!obj.isNull("coordinates")) {
 
-                    Log.v("Tweet Text:", obj.get("text").toString());
-                    Log.v("Tweet Date:", obj.get("created_at").toString());
-                    convertDate(obj.get("created_at").toString());
+                        JSONObject coords = new JSONObject(obj.get("coordinates").toString());
+                        JSONArray latlng = coords.getJSONArray("coordinates");
 
-                    //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
-                    //************************
-                    //TWITTER USES LONGITUDE THEN LATITUDE
-                    //************************
+                        Log.v("Tweet Text:", obj.get("text").toString());
+                        Log.v("Tweet Date:", obj.get("created_at").toString());
+                        convertDate(obj.get("created_at").toString());
+
+                        //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
+                        //************************
+                        //TWITTER USES LONGITUDE THEN LATITUDE
+                        //************************
 
 
-                    Double lat = Double.parseDouble(latlng.get(1).toString());
-                    double lng = Double.parseDouble(latlng.get(0).toString());
-                    LatLng pos = new LatLng(lat, lng);
-                    list.add(pos);
-                    counter++;
-                    //Log.v("Coordinates:", "" + lat + " : " + lng);
-                    Log.v("Coordinates Counter:", "" + counter);
+                        Double lat = Double.parseDouble(latlng.get(1).toString());
+                        double lng = Double.parseDouble(latlng.get(0).toString());
+                        LatLng pos = new LatLng(lat, lng);
+                        list.add(pos);
+                        counter++;
+                        //Log.v("Coordinates:", "" + lat + " : " + lng);
+                        Log.v("Coordinates Counter:", "" + counter);
+
+
+                    }
                 }
             }
             is.close();
@@ -218,22 +245,22 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         return list;
     }
 
-    private class RetrieveTweets extends AsyncTask<Integer, Void, Integer> {
+    private class RetrieveTweets extends AsyncTask<String, Void, Integer> {
         Context context = getApplicationContext();
-        protected Integer doInBackground(Integer... test){
-            final int num = test[0];
+        int limit = 10000;
+        protected Integer doInBackground(String... test){
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run(){
-                    Toast.makeText(context, "Retrieving " + num + " tweets", Toast.LENGTH_LONG).show();
+                    Toast.makeText(context, "Retrieving up to " + limit + " tweets", Toast.LENGTH_LONG).show();
                 }
             });
             try{
-                cachePos = loadJSON(test[0]);
+                cachePos = loadJSON(limit, test[0]);
             } catch (JSONException ex){
                 ex.printStackTrace();
             }
 
-            return test[0];
+            return cachePos.size();
         }
 
         protected void onPostExecute(Integer test){
