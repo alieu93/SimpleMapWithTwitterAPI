@@ -53,7 +53,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -67,6 +69,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     List<String> list = new ArrayList<String>();
     Set<String> unique;
+    Set<String> uniqueDates = new HashSet<String>();
 
 
     private GoogleMap mMap;
@@ -114,35 +117,24 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mMap.getUiSettings().setCompassEnabled(true);
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
-        /*
-        try {
-            //int limit = 8000;
-            //loadJSON(limit);
-            //circleToMap(cachePos, limit);
-        } catch (JSONException ex){
-            ex.printStackTrace();
-        }*/
         //Integer limit = 1000;
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
         edit = (EditText) relative.findViewById(R.id.EditText1);
         searchButton = (Button) relative.findViewById(R.id.button1);
         searchButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View view){
-                if(edit.getText().toString() != null){
                     if(!hasSearched) {
                         String test = edit.getText().toString();
                         Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
                         new RetrieveTweets().execute(test);
                         hasSearched = true;
                     }
-                }
             }
         });
     }
 
     private String convertDate(String tweetDate){
         String[] elements = tweetDate.split("\\s+");
-        //Log.v("convertDate", elements[0] + elements[1] + elements[2]);
         String month = null;
         switch(elements[1]){
             case "Jan":
@@ -182,10 +174,15 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 month = "12";
                 break;
         }
-        String date = month + "-" + elements[2] + "-" + elements[5];
+        //Month, day, year
+        //String date = month + "-" + elements[2] + "-" + elements[5];
+        //Year, Month, Day
+        String date = elements[5] + "-" + month + "-" + elements[2];
+
 
         /*
-        SimpleDateFormat format = new SimpleDateFormat("MM-dd-yyyy");
+        //SimpleDateFormat format = new SimpleDateFormat("MM-dd-yyyy");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         Calendar cal = Calendar.getInstance();
         Integer day = Integer.parseInt(elements[2]);
         Integer monthInt = Integer.parseInt(month);
@@ -194,10 +191,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         //Can't seem to actually increment a day, so increment a month and a day then decrement a month
         cal.add(Calendar.DAY_OF_MONTH, 1);
         cal.add(Calendar.MONTH, -1);
-        Log.v("Calendar Operations", format.format(cal.getTime()));*/
+        Log.v("Calendar Operations", date + "-----" + format.format(cal.getTime()));*/
 
 
-        Log.v("convertDate", date);
+        //Log.v("convertDate", date);
+        uniqueDates.add(date);
         return date;
     }
 
@@ -207,8 +205,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         try{
             InputStream is = getResources().openRawResource(R.raw.toronto);
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-            StringBuilder sb = new StringBuilder();
             String line;
+
             //Read just coordinates for now
             int counter = 0;
 
@@ -249,8 +247,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                         counter++;
                         //Log.v("Coordinates:", "" + lat + " : " + lng);
                         Log.v("Coordinates Counter:", "" + counter);
-
-
                     }
                 }
             }
@@ -260,12 +256,20 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             ex.printStackTrace();
             return null;
         }
+
+        //TODO: Use for incrementing for time animation
+        List<String> sortedUnique = new ArrayList<String>(uniqueDates);
+        Collections.sort(sortedUnique);
+        for(String s : sortedUnique){
+            Log.v("Unique Dates", s);
+        }
+
         return list;
     }
 
-    private class RetrieveTweets extends AsyncTask<String, Void, Integer> {
+    private class RetrieveTweets extends AsyncTask<String, String, Integer> {
         Context context = getApplicationContext();
-        int limit = 10000;
+        int limit = 30000;
         protected Integer doInBackground(String... test){
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run(){
