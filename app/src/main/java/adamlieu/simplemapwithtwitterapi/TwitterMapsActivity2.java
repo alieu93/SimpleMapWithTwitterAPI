@@ -55,12 +55,18 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
     EditText edit;
     Button searchButton;
     RelativeLayout relative;
     boolean hasSearched = false;
+
+    List<String> list = new ArrayList<String>();
+    Set<String> unique;
 
 
     private GoogleMap mMap;
@@ -215,6 +221,18 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                         JSONArray latlng = coords.getJSONArray("coordinates");
 
                         Log.v("Tweet Text:", obj.get("text").toString());
+
+                        //Remove later
+                        List<String> matchList = new ArrayList<String>();
+                        Pattern regex = Pattern.compile("\\#.*?\\s");
+                        Matcher regexMatcher = regex.matcher(obj.get("text").toString());
+                        while(regexMatcher.find()){
+                            matchList.add(regexMatcher.group(0));
+                            for(String str : matchList){
+                                Log.v("Regex", str);
+                            }
+                        }
+
                         Log.v("Tweet Date:", obj.get("created_at").toString());
                         convertDate(obj.get("created_at").toString());
 
@@ -265,6 +283,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         protected void onPostExecute(Integer test){
             Toast.makeText(context, "Retrieval complete, displaying " + test + " Tweets." , Toast.LENGTH_SHORT).show();
+            Log.v("Retrieval:", "Got " + test + " tweets");
             circleToMap(cachePos);
         }
     }
