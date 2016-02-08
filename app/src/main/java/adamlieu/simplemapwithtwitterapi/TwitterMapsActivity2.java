@@ -15,6 +15,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -46,9 +47,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -56,8 +59,11 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,9 +73,15 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     RelativeLayout relative;
     boolean hasSearched = false;
 
-    List<String> list = new ArrayList<String>();
+    List<String> listTrends = new ArrayList<String>();
+    List<String> sortedUnique;
+
     Set<String> unique;
     Set<String> uniqueDates = new HashSet<String>();
+    Set<String> uniqueTrends;// = new HashSet<String>();
+
+    //JSON created to store the coordinates under dates
+    JSONObject tweets = new JSONObject();
 
 
     private GoogleMap mMap;
@@ -123,14 +135,31 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         searchButton = (Button) relative.findViewById(R.id.button1);
         searchButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View view){
-                    if(!hasSearched) {
-                        String test = edit.getText().toString();
-                        Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
-                        new RetrieveTweets().execute(test);
-                        hasSearched = true;
-                    }
+                if(!hasSearched) {
+                    String test = edit.getText().toString();
+                    Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
+                    new RetrieveTweets().execute(test);
+                    hasSearched = true;
+                }
             }
         });
+    }
+
+    public void startAnimation(){
+        final Handler handler = new Handler();
+        Timer myTimer = new Timer();
+        TimerTask timertask = new TimerTask(){
+            @Override
+            public void run(){
+                handler.post(new Runnable(){
+                    public void run(){
+
+                    }
+                });
+
+            }
+        };
+        myTimer.schedule(timertask, 0, 2000);
     }
 
     private String convertDate(String tweetDate){
@@ -204,6 +233,14 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         List<LatLng> list = new ArrayList<>();
         boolean torontoCheck = false;
         boolean oshawaCheck = false;
+
+        int oshawaCounter = 0;
+        int torontoCounter = 0;
+
+        int jsonCounter = 0;
+
+        //
+
         try{
             InputStream isT = getResources().openRawResource(R.raw.toronto);
             InputStream isO = getResources().openRawResource(R.raw.oshawa);
@@ -219,6 +256,10 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             //while(((line = torontoReader.readLine()) != null) && counter < limit){
             while(true) {
+                if(counter > limit){
+                    break;
+                }
+
                 JSONObject obj = null;
                 JSONObject oshObj = null;
                 torLine = torontoReader.readLine();
@@ -236,9 +277,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 }
 
                 if (oshawaCheck && torontoCheck) {
-                    break;
-                }
-                if(counter > limit){
                     break;
                 }
 
@@ -259,12 +297,13 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             while (regexMatcher.find()) {
                                 matchList.add(regexMatcher.group(0));
                                 for (String str : matchList) {
-                                    Log.v("Regex", str);
+                                    Log.v("Toronto Regex", str);
+                                    listTrends.add(str);
                                 }
                             }
 
                             Log.v("Tweet Date:", obj.get("created_at").toString());
-                            convertDate(obj.get("created_at").toString());
+
 
                             //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
                             //************************
@@ -276,9 +315,28 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             double lng = Double.parseDouble(latlng.get(0).toString());
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
-                            //counter++;
+                            torontoCounter++;
                             //Log.v("Coordinates:", "" + lat + " : " + lng);
-                            Log.v("Toronto Coord Counter:", "" + counter);
+                            Log.v("Toronto Coord Counter:", "" + torontoCounter);
+
+
+                            String convertedDate = convertDate(obj.get("created_at").toString());
+                            if(tweets.has(convertedDate)){
+                                JSONObject currentDate = tweets.getJSONObject(convertedDate);
+                                jsonCounter++;
+                                JSONArray jsonCoords = new JSONArray();
+                                jsonCoords.put(pos.latitude);
+                                jsonCoords.put(pos.longitude);
+                                currentDate.put(""+jsonCounter, jsonCoords);
+                            } else {
+                                JSONObject json = new JSONObject();
+                                JSONArray jsonCoords = new JSONArray();
+                                jsonCoords.put(pos.latitude);
+                                jsonCoords.put(pos.longitude);
+                                json.put(""+jsonCounter, jsonCoords);
+                                tweets.put(convertedDate, json);
+                                jsonCounter = 0;
+                            }
                         }
                     }
                 }
@@ -299,7 +357,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             while (regexMatcher.find()) {
                                 matchList.add(regexMatcher.group(0));
                                 for (String str : matchList) {
-                                    Log.v("Regex", str);
+                                    Log.v("Oshawa Regex", str);
+                                    listTrends.add(str);
                                 }
                             }
 
@@ -316,13 +375,32 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             double lng = Double.parseDouble(latlng.get(0).toString());
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
-                            //counter++;
+                            oshawaCounter++;
                             //Log.v("Coordinates:", "" + lat + " : " + lng);
-                            Log.v("Oshawa Coord Counter:", "" + counter);
+                            Log.v("Oshawa Coord Counter:", "" + oshawaCounter);
+
+
+                            String convertedDate = convertDate(oshObj.get("created_at").toString());
+                            if(tweets.has(convertedDate)){
+                                JSONObject currentDate = tweets.getJSONObject(convertedDate);
+                                jsonCounter++;
+                                JSONArray jsonCoords = new JSONArray();
+                                jsonCoords.put(pos.latitude);
+                                jsonCoords.put(pos.longitude);
+                                currentDate.put(""+jsonCounter, jsonCoords);
+                            } else {
+                                JSONObject json = new JSONObject();
+                                JSONArray jsonCoords = new JSONArray();
+                                jsonCoords.put(pos.latitude);
+                                jsonCoords.put(pos.longitude);
+                                json.put(""+jsonCounter, jsonCoords);
+                                tweets.put(convertedDate, json);
+                                jsonCounter = 0;
+                            }
                         }
                     }
                 }
-                counter++;
+                counter = oshawaCounter + torontoCounter;
             }
             Log.v("Read JSON:", "Success");
         } catch (IOException ex){
@@ -331,11 +409,16 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         }
 
         //TODO: Use for incrementing for time animation
-        List<String> sortedUnique = new ArrayList<String>(uniqueDates);
+        sortedUnique = new ArrayList<String>(uniqueDates);
         Collections.sort(sortedUnique);
         for(String s : sortedUnique){
             Log.v("Unique Dates", s);
         }
+        Log.v("Num of Coords", "" + list.size());
+        Log.v("JSON", "" + tweets);
+        
+        //Get all elements under a specified date
+        Log.v("JSON", tweets.get(sortedUnique.get(0)).toString());
 
         return list;
     }
@@ -388,7 +471,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             .image(desc)
                             .position(i, 150)
             );
-            Log.v("Adding point:", "" + i);
+            //Log.v("Adding point:", "" + i);
             //counter++;
 
             //if(counter > limit) break;
