@@ -202,55 +202,128 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     public List<LatLng> loadJSON(int limit, String text) throws JSONException{
         //String json = null;
         List<LatLng> list = new ArrayList<>();
+        boolean torontoCheck = false;
+        boolean oshawaCheck = false;
         try{
-            InputStream is = getResources().openRawResource(R.raw.toronto);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-            String line;
+            InputStream isT = getResources().openRawResource(R.raw.toronto);
+            InputStream isO = getResources().openRawResource(R.raw.oshawa);
+            BufferedReader torontoReader = new BufferedReader(new InputStreamReader(isT, "UTF-8"));
+            BufferedReader oshawaReader = new BufferedReader(new InputStreamReader(isO, "UTF-8"));
+            String torLine;
+            String oshLine;
+
+
 
             //Read just coordinates for now
             int counter = 0;
 
-            while(((line = reader.readLine()) != null) && counter < limit){
-                JSONObject obj = new JSONObject(line);
-                if(obj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
-                    if (!obj.isNull("coordinates")) {
+            //while(((line = torontoReader.readLine()) != null) && counter < limit){
+            while(true) {
+                JSONObject obj = null;
+                JSONObject oshObj = null;
+                torLine = torontoReader.readLine();
+                oshLine = oshawaReader.readLine();
+                if (torLine == null) {
+                    torontoCheck = true;
+                } else {
+                    obj = new JSONObject(torLine);
+                }
 
-                        JSONObject coords = new JSONObject(obj.get("coordinates").toString());
-                        JSONArray latlng = coords.getJSONArray("coordinates");
+                if (oshLine == null) {
+                    oshawaCheck = true;
+                } else {
+                    oshObj = new JSONObject(oshLine);
+                }
 
-                        Log.v("Tweet Text:", obj.get("text").toString());
+                if (oshawaCheck && torontoCheck) {
+                    break;
+                }
+                if(counter > limit){
+                    break;
+                }
 
-                        //Remove later
-                        List<String> matchList = new ArrayList<String>();
-                        Pattern regex = Pattern.compile("\\#.*?\\s");
-                        Matcher regexMatcher = regex.matcher(obj.get("text").toString());
-                        while(regexMatcher.find()){
-                            matchList.add(regexMatcher.group(0));
-                            for(String str : matchList){
-                                Log.v("Regex", str);
+                //Toronto
+                if (!torontoCheck) {
+                    if (obj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
+                        if (!obj.isNull("coordinates")) {
+
+                            JSONObject coords = new JSONObject(obj.get("coordinates").toString());
+                            JSONArray latlng = coords.getJSONArray("coordinates");
+
+                            Log.v("Toronto Tweet Text:", obj.get("text").toString());
+
+                            //Remove later
+                            List<String> matchList = new ArrayList<String>();
+                            Pattern regex = Pattern.compile("\\#.*?\\s");
+                            Matcher regexMatcher = regex.matcher(obj.get("text").toString());
+                            while (regexMatcher.find()) {
+                                matchList.add(regexMatcher.group(0));
+                                for (String str : matchList) {
+                                    Log.v("Regex", str);
+                                }
                             }
+
+                            Log.v("Tweet Date:", obj.get("created_at").toString());
+                            convertDate(obj.get("created_at").toString());
+
+                            //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
+                            //************************
+                            //TWITTER USES LONGITUDE THEN LATITUDE
+                            //************************
+
+
+                            Double lat = Double.parseDouble(latlng.get(1).toString());
+                            double lng = Double.parseDouble(latlng.get(0).toString());
+                            LatLng pos = new LatLng(lat, lng);
+                            list.add(pos);
+                            //counter++;
+                            //Log.v("Coordinates:", "" + lat + " : " + lng);
+                            Log.v("Toronto Coord Counter:", "" + counter);
                         }
-
-                        Log.v("Tweet Date:", obj.get("created_at").toString());
-                        convertDate(obj.get("created_at").toString());
-
-                        //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
-                        //************************
-                        //TWITTER USES LONGITUDE THEN LATITUDE
-                        //************************
-
-
-                        Double lat = Double.parseDouble(latlng.get(1).toString());
-                        double lng = Double.parseDouble(latlng.get(0).toString());
-                        LatLng pos = new LatLng(lat, lng);
-                        list.add(pos);
-                        counter++;
-                        //Log.v("Coordinates:", "" + lat + " : " + lng);
-                        Log.v("Coordinates Counter:", "" + counter);
                     }
                 }
+                //Oshawa
+                if (!oshawaCheck) {
+                    if (oshObj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
+                        if (!oshObj.isNull("coordinates")) {
+
+                            JSONObject coords = new JSONObject(oshObj.get("coordinates").toString());
+                            JSONArray latlng = coords.getJSONArray("coordinates");
+
+                            Log.v("Oshawa Tweet Text:", oshObj.get("text").toString());
+
+                            //Remove later
+                            List<String> matchList = new ArrayList<String>();
+                            Pattern regex = Pattern.compile("\\#.*?\\s");
+                            Matcher regexMatcher = regex.matcher(obj.get("text").toString());
+                            while (regexMatcher.find()) {
+                                matchList.add(regexMatcher.group(0));
+                                for (String str : matchList) {
+                                    Log.v("Regex", str);
+                                }
+                            }
+
+                            Log.v("Oshawa Tweet Date:", oshObj.get("created_at").toString());
+                            convertDate(oshObj.get("created_at").toString());
+
+                            //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
+                            //************************
+                            //TWITTER USES LONGITUDE THEN LATITUDE
+                            //************************
+
+
+                            Double lat = Double.parseDouble(latlng.get(1).toString());
+                            double lng = Double.parseDouble(latlng.get(0).toString());
+                            LatLng pos = new LatLng(lat, lng);
+                            list.add(pos);
+                            //counter++;
+                            //Log.v("Coordinates:", "" + lat + " : " + lng);
+                            Log.v("Oshawa Coord Counter:", "" + counter);
+                        }
+                    }
+                }
+                counter++;
             }
-            is.close();
             Log.v("Read JSON:", "Success");
         } catch (IOException ex){
             ex.printStackTrace();
@@ -269,7 +342,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     private class RetrieveTweets extends AsyncTask<String, String, Integer> {
         Context context = getApplicationContext();
-        int limit = 30000;
+        int limit = 10000;
         protected Integer doInBackground(String... test){
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run(){
