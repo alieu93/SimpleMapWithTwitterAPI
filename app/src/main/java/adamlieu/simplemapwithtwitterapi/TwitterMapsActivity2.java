@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.location.Criteria;
@@ -19,7 +18,6 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
@@ -37,10 +35,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -72,6 +68,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     Button searchButton;
     RelativeLayout relative;
     boolean hasSearched = false;
+
+    LatLng UOIT = new LatLng(43.945791, -78.894689);
 
     List<String> listTrends = new ArrayList<String>();
     List<String> sortedUnique;
@@ -133,9 +131,9 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
         edit = (EditText) relative.findViewById(R.id.EditText1);
         searchButton = (Button) relative.findViewById(R.id.button1);
-        searchButton.setOnClickListener(new View.OnClickListener(){
-            public void onClick(View view){
-                if(!hasSearched) {
+        searchButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                if (!hasSearched) {
                     String test = edit.getText().toString();
                     Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
                     new RetrieveTweets().execute(test);
@@ -288,7 +286,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             JSONObject coords = new JSONObject(obj.get("coordinates").toString());
                             JSONArray latlng = coords.getJSONArray("coordinates");
 
-                            Log.v("Toronto Tweet Text:", obj.get("text").toString());
+                            //Log.v("Toronto Tweet Text:", obj.get("text").toString());
 
                             //Remove later
                             List<String> matchList = new ArrayList<String>();
@@ -297,15 +295,14 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             while (regexMatcher.find()) {
                                 matchList.add(regexMatcher.group(0));
                                 for (String str : matchList) {
-                                    Log.v("Toronto Regex", str);
+                                    //Log.v("Toronto Regex", str);
                                     listTrends.add(str);
                                 }
                             }
 
-                            Log.v("Tweet Date:", obj.get("created_at").toString());
+                            //Log.v("Tweet Date:", obj.get("created_at").toString());
 
 
-                            //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
                             //************************
                             //TWITTER USES LONGITUDE THEN LATITUDE
                             //************************
@@ -316,8 +313,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
                             torontoCounter++;
-                            //Log.v("Coordinates:", "" + lat + " : " + lng);
-                            Log.v("Toronto Coord Counter:", "" + torontoCounter);
+                            //Log.v("Toronto Coord Counter:", "" + torontoCounter);
 
 
                             String convertedDate = convertDate(obj.get("created_at").toString());
@@ -348,7 +344,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             JSONObject coords = new JSONObject(oshObj.get("coordinates").toString());
                             JSONArray latlng = coords.getJSONArray("coordinates");
 
-                            Log.v("Oshawa Tweet Text:", oshObj.get("text").toString());
+                            //Log.v("Oshawa Tweet Text:", oshObj.get("text").toString());
 
                             //Remove later
                             List<String> matchList = new ArrayList<String>();
@@ -357,12 +353,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             while (regexMatcher.find()) {
                                 matchList.add(regexMatcher.group(0));
                                 for (String str : matchList) {
-                                    Log.v("Oshawa Regex", str);
+                                    //Log.v("Oshawa Regex", str);
                                     listTrends.add(str);
                                 }
                             }
 
-                            Log.v("Oshawa Tweet Date:", oshObj.get("created_at").toString());
+                            //Log.v("Oshawa Tweet Date:", oshObj.get("created_at").toString());
                             convertDate(oshObj.get("created_at").toString());
 
                             //Log.v("Coordinates:", latlng.get(0).toString() + " : " + latlng.get(1).toString());
@@ -376,8 +372,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
                             oshawaCounter++;
-                            //Log.v("Coordinates:", "" + lat + " : " + lng);
-                            Log.v("Oshawa Coord Counter:", "" + oshawaCounter);
+                            //Log.v("Oshawa Coord Counter:", "" + oshawaCounter);
 
 
                             String convertedDate = convertDate(oshObj.get("created_at").toString());
@@ -402,7 +397,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 }
                 counter = oshawaCounter + torontoCounter;
             }
-            Log.v("Read JSON:", "Success");
+            //Log.v("Read JSON:", "Success");
         } catch (IOException ex){
             ex.printStackTrace();
             return null;
@@ -412,21 +407,21 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         sortedUnique = new ArrayList<String>(uniqueDates);
         Collections.sort(sortedUnique);
         for(String s : sortedUnique){
-            Log.v("Unique Dates", s);
+            //Log.v("Unique Dates", s);
         }
-        Log.v("Num of Coords", "" + list.size());
-        Log.v("JSON", "" + tweets);
-        
+        //Log.v("Num of Coords", "" + list.size());
+        //Log.v("JSON", "" + tweets);
+
         //Get all elements under a specified date
-        Log.v("JSON", tweets.get(sortedUnique.get(0)).toString());
+        //Log.v("JSON", tweets.get(sortedUnique.get(0)).toString());
 
         return list;
     }
 
-    private class RetrieveTweets extends AsyncTask<String, String, Integer> {
+    private class RetrieveTweets extends AsyncTask<String, String, List<LatLng>> {
         Context context = getApplicationContext();
         int limit = 10000;
-        protected Integer doInBackground(String... test){
+        protected List<LatLng> doInBackground(String... test){
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run(){
                     Toast.makeText(context, "Retrieving up to " + limit + " tweets", Toast.LENGTH_LONG).show();
@@ -438,13 +433,43 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 ex.printStackTrace();
             }
 
-            return cachePos.size();
+            return cachePos;
         }
 
-        protected void onPostExecute(Integer test){
-            Toast.makeText(context, "Retrieval complete, displaying " + test + " Tweets." , Toast.LENGTH_SHORT).show();
-            Log.v("Retrieval:", "Got " + test + " tweets");
-            circleToMap(cachePos);
+        protected void onPostExecute(List<LatLng> test){
+            Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets." , Toast.LENGTH_SHORT).show();
+            Log.v("Retrieval:", "Got " + test.size() + " tweets");
+            //circleToMap(cachePos);
+            new TweetOverlay().draw(test);
+            //mMap.clear();
+        }
+    }
+
+    public class TweetOverlay{
+        float radius = 100;
+        public void draw(List<LatLng> list){
+            Canvas canvas = new Canvas();
+            Paint opaque50 = new Paint();
+            opaque50.setARGB(128, 0, 0, 255);
+
+            Point p = new Point();
+            p.x = 0;
+            p.y = 0;
+            //Log.v("TestOverlay", ""+mMap.getProjection().fromScreenLocation(p));
+            //Log.v("TweetOverlay", ""+canvas.getMaximumBitmapHeight() + "\t" + canvas.getMaximumBitmapWidth() );
+            for(LatLng pos : list){
+                //Log.v("TweetOverlay", "" + pos);
+                Point screenPos = toPixels(pos);
+                canvas.drawCircle(screenPos.x, screenPos.y, radius, opaque50);
+                Log.i("Canvas", screenPos.x + "\t" + screenPos.y);
+                //Log.i("Canvas", canvas.getHeight() + "   " + canvas.getWidth());
+                //canvas.drawCircle((float)screenPos.x, (float)screenPos.y, radius, opaque50);
+            }
+
+
+        }
+        private Point toPixels(LatLng latlng){
+            return mMap.getProjection().toScreenLocation(latlng);
         }
     }
 
