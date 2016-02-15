@@ -449,7 +449,7 @@ public class TwitterMapsActivity extends FragmentActivity {
             mMap.addMarker(new MarkerOptions().position(currentPos).title("Toronto"));
 
             //Controls the camera so it would zoom into current position
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 15);
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 1);
             mMap.animateCamera(cameraUpdate);
             //randGridToMap(UOIT, 200);
         }

@@ -47,6 +47,10 @@
             android:name=".TwitterMapsActivity2"
             android:label="@string/title_activity_twitter_maps2" >
         </activity>
+        <activity
+            android:name=".TestMapsActivity"
+            android:label="@string/title_activity_test_maps" >
+        </activity>
     </application>
 
 </manifest>

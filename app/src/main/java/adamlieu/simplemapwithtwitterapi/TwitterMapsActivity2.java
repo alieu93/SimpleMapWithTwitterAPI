@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.location.Criteria;
@@ -35,14 +37,22 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Tile;
+import com.google.android.gms.maps.model.TileOverlay;
+import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.gms.maps.model.TileProvider;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,6 +100,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     List<LatLng> cachePos = new ArrayList<>();
     BitmapDescriptor desc;
 
+    private List<LatLng> points = new ArrayList<>();
+    private float radius = 100;
+    LatLng currentPos = new LatLng(44.333304,-94.419696);
+
+    LatLngBounds bounds;
+
 
 
     @Override
@@ -124,8 +140,24 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         mMap.setMyLocationEnabled(true);
         mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(true);
+
+        points.add(new LatLng(44.968046, -94.420307));
+        points.add(new LatLng(44.33328,-89.132008));
+        points.add(new LatLng(33.755787,-116.359998));
+        points.add(new LatLng(33.844843,-116.54911));
+        points.add(new LatLng(44.92057,-93.44786));
+        points.add(new LatLng(44.240309,-91.493619));
+        points.add(new LatLng(44.968041,-94.419696));
+        points.add(new LatLng(44.333304,-89.132027));
+        points.add(new LatLng(33.755783,-116.360066));
+        points.add(new LatLng(33.844847,-116.549069));
+        points.add(new LatLng(44.920474,-93.447851));
+        points.add(new LatLng(44.240304,-91.493768));
+
+
+        bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
 
         //Integer limit = 1000;
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
@@ -336,6 +368,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                         }
                     }
                 }
+
                 //Oshawa
                 if (!oshawaCheck) {
                     if (oshObj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
@@ -423,7 +456,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         int limit = 10000;
         protected List<LatLng> doInBackground(String... test){
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
-                public void run(){
+                public void run() {
                     Toast.makeText(context, "Retrieving up to " + limit + " tweets", Toast.LENGTH_LONG).show();
                 }
             });
@@ -437,41 +470,44 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         }
 
         protected void onPostExecute(List<LatLng> test){
-            Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets." , Toast.LENGTH_SHORT).show();
             Log.v("Retrieval:", "Got " + test.size() + " tweets");
             //circleToMap(cachePos);
-            new TweetOverlay().draw(test);
-            //mMap.clear();
+            //new TweetOverlay().draw(test);
+            Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
+            Bitmap overlay = createOverlayBitmap(points);
+            BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(overlay);
+            //Need to fix bounds
+            LatLngBounds bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
+            Log.v("Bounds", "" + bounds);
+            GroundOverlay t = mMap.addGroundOverlay(new GroundOverlayOptions().image(desc).positionFromBounds(bounds));
+            Log.v("Overlay POS", "" + t.getPosition());
         }
     }
 
-    public class TweetOverlay{
-        float radius = 100;
-        public void draw(List<LatLng> list){
-            Canvas canvas = new Canvas();
-            Paint opaque50 = new Paint();
-            opaque50.setARGB(128, 0, 0, 255);
 
-            Point p = new Point();
-            p.x = 0;
-            p.y = 0;
-            //Log.v("TestOverlay", ""+mMap.getProjection().fromScreenLocation(p));
-            //Log.v("TweetOverlay", ""+canvas.getMaximumBitmapHeight() + "\t" + canvas.getMaximumBitmapWidth() );
-            for(LatLng pos : list){
-                //Log.v("TweetOverlay", "" + pos);
-                Point screenPos = toPixels(pos);
-                canvas.drawCircle(screenPos.x, screenPos.y, radius, opaque50);
-                Log.i("Canvas", screenPos.x + "\t" + screenPos.y);
-                //Log.i("Canvas", canvas.getHeight() + "   " + canvas.getWidth());
-                //canvas.drawCircle((float)screenPos.x, (float)screenPos.y, radius, opaque50);
-            }
+    public Bitmap createOverlayBitmap(List<LatLng> point) {
+        Paint opaque50 = new Paint();
+        opaque50.setARGB(128, 0, 0, 255);
 
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int height = size.y;
 
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        for (LatLng pos : point) {
+            Point screenPos = toPixels(pos);
+            canvas.drawCircle((float) screenPos.x, (float) screenPos.y, radius, opaque50);
         }
-        private Point toPixels(LatLng latlng){
+        return bitmap;
+    }
+
+
+        private Point toPixels(LatLng latlng) {
             return mMap.getProjection().toScreenLocation(latlng);
         }
-    }
 
 
     private void circleToMap(List<LatLng> pos){
@@ -552,10 +588,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             //LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
             LatLng currentPos = new LatLng(43.945791, -78.894689);
             //Add a marker on the map with the current position
-            //mMap.addMarker(new MarkerOptions().position(currentPos).title("UOIT"));
+            mMap.addMarker(new MarkerOptions().position(currentPos).title("Here"));
 
             //Controls the camera so it would zoom into current position
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 13);
+            //mMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos));
             mMap.animateCamera(cameraUpdate);
         }
     }

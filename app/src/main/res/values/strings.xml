@@ -7,4 +7,5 @@
     <string name="title_activity_twitter_maps">Map</string>
     <string name="title_activity_tweet_fragment">TweetFragment</string>
     <string name="title_activity_twitter_maps2">TwitterMapsActivity2</string>
+    <string name="title_activity_test_maps">TestMapsActivity</string>
 </resources>
