@@ -100,9 +100,10 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     List<LatLng> cachePos = new ArrayList<>();
     BitmapDescriptor desc;
 
-    private List<LatLng> points = new ArrayList<>();
     private float radius = 100;
     LatLng currentPos = new LatLng(44.333304,-94.419696);
+
+    ArrayList<LatLng> newOne = new ArrayList<LatLng>();
 
     LatLngBounds bounds;
 
@@ -143,22 +144,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mMap.getUiSettings().setCompassEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
-        points.add(new LatLng(44.968046, -94.420307));
-        points.add(new LatLng(44.33328,-89.132008));
-        points.add(new LatLng(33.755787,-116.359998));
-        points.add(new LatLng(33.844843,-116.54911));
-        points.add(new LatLng(44.92057,-93.44786));
-        points.add(new LatLng(44.240309,-91.493619));
-        points.add(new LatLng(44.968041,-94.419696));
-        points.add(new LatLng(44.333304,-89.132027));
-        points.add(new LatLng(33.755783,-116.360066));
-        points.add(new LatLng(33.844847,-116.549069));
-        points.add(new LatLng(44.920474,-93.447851));
-        points.add(new LatLng(44.240304,-91.493768));
-
-
-        bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
-
         //Integer limit = 1000;
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
         edit = (EditText) relative.findViewById(R.id.EditText1);
@@ -170,6 +155,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
                     new RetrieveTweets().execute(test);
                     hasSearched = true;
+                    newOne.add(new LatLng(43.6532, -79.3832));
                 }
             }
         });
@@ -453,36 +439,64 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     private class RetrieveTweets extends AsyncTask<String, String, List<LatLng>> {
         Context context = getApplicationContext();
-        int limit = 10000;
-        protected List<LatLng> doInBackground(String... test){
+        int limit = 20000;
+
+        protected List<LatLng> doInBackground(String... test) {
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run() {
                     Toast.makeText(context, "Retrieving up to " + limit + " tweets", Toast.LENGTH_LONG).show();
                 }
             });
-            try{
+            try {
                 cachePos = loadJSON(limit, test[0]);
-            } catch (JSONException ex){
+            } catch (JSONException ex) {
                 ex.printStackTrace();
             }
 
             return cachePos;
         }
 
-        protected void onPostExecute(List<LatLng> test){
+        protected void onPostExecute(List<LatLng> test) {
             Log.v("Retrieval:", "Got " + test.size() + " tweets");
             //circleToMap(cachePos);
             //new TweetOverlay().draw(test);
             Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
+            /*
             Bitmap overlay = createOverlayBitmap(points);
             BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(overlay);
             //Need to fix bounds
             LatLngBounds bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
             Log.v("Bounds", "" + bounds);
             GroundOverlay t = mMap.addGroundOverlay(new GroundOverlayOptions().image(desc).positionFromBounds(bounds));
-            Log.v("Overlay POS", "" + t.getPosition());
+            Log.v("Overlay POS", "" + t.getPosition());*/
         }
     }
+
+    private class CustomTileOverlay implements TileProvider {
+        private List<Point> points = new ArrayList<Point>();
+        private final int TILE_SIZE_DP = 256;
+        private final float mScaleFactor = 1;
+        private final Bitmap bitmap;
+
+
+        //May not need?
+        //Stuff into getTile if not needed
+        public CustomTileOverlay(Context context){
+            bitmap = Bitmap.createBitmap((int) (TILE_SIZE_DP * mScaleFactor),
+                    (int) (TILE_SIZE_DP * mScaleFactor), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+        }
+
+        @Override
+        public Tile getTile(int x, int y, int zoom){
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+            //byte[] bitmapData = stream.toByteArray();
+            return new Tile((int) (TILE_SIZE_DP * mScaleFactor),
+                    (int) (TILE_SIZE_DP * mScaleFactor), stream.toByteArray());
+        }
+    }
+
 
 
     public Bitmap createOverlayBitmap(List<LatLng> point) {

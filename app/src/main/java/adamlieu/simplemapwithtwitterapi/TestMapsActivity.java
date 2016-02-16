@@ -31,6 +31,7 @@ public class TestMapsActivity extends FragmentActivity implements OnMapReadyCall
 
     private List<LatLng> points = new ArrayList<>();
     private float radius = 100;
+    private LatLngBounds.Builder build = new LatLngBounds.Builder();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +42,7 @@ public class TestMapsActivity extends FragmentActivity implements OnMapReadyCall
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        /*
         points.add(new LatLng(44.968046, -94.420307));
         points.add(new LatLng(44.33328,-89.132008));
         points.add(new LatLng(33.755787,-116.359998));
@@ -53,15 +55,24 @@ public class TestMapsActivity extends FragmentActivity implements OnMapReadyCall
         points.add(new LatLng(33.844847,-116.549069));
         points.add(new LatLng(44.920474,-93.447851));
         points.add(new LatLng(44.240304,-91.493768));
+        */
+        points.add(new LatLng(43.6532, -79.3832));
+        points.add(new LatLng(43.8662067,-79.4423077));
 
         currentPos = new LatLng(44.333304,-94.419696);
 
-        bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
+        //bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
+        for(LatLng i : points){
+            build.include(new LatLng(i.latitude, i.longitude));
+        }
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setCompassEnabled(false);
+        mMap.getUiSettings().setMapToolbarEnabled(true);
 
         // Add a marker in Sydney and move the camera
         mMap.addMarker(new MarkerOptions().position(currentPos).title("You are here"));
@@ -69,8 +80,8 @@ public class TestMapsActivity extends FragmentActivity implements OnMapReadyCall
 
         Bitmap overlayBitmap = createOverlayBitmap(this.points);
         BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(overlayBitmap);
-        Log.v("Bounds", "" + bounds);
-        GroundOverlay t = mMap.addGroundOverlay(new GroundOverlayOptions().image(desc).positionFromBounds(bounds));
+        Log.v("Bounds", "" + build.build());
+        GroundOverlay t = mMap.addGroundOverlay(new GroundOverlayOptions().image(desc).positionFromBounds(build.build()));
         Log.v("Overlay POS", ""+t.getPosition());
     }
 
@@ -89,6 +100,7 @@ public class TestMapsActivity extends FragmentActivity implements OnMapReadyCall
 
         for (LatLng mapPos: points) {
             Point screenPos = toPixels(mapPos);
+            Log.v("ScreenPos", screenPos.x + "\t" + screenPos.y);
             canvas.drawCircle((float)screenPos.x, (float)screenPos.y, radius, opaque50);
         }
 
