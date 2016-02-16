@@ -473,10 +473,16 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     }
 
     private class CustomTileOverlay implements TileProvider {
+        //Mercator Projection Equation
+        //X = longitude / 360; (?)
+        //Y = 1/2 * log((1+sin(lat))/(1-sin(lat)) /  -(2*pi)  )
+
+        //Tile Overlay scale equation:
+        // 2^(Zoom level)
         private List<Point> points = new ArrayList<Point>();
-        private final int TILE_SIZE_DP = 256;
-        private final float mScaleFactor = 1;
-        private final Bitmap bitmap;
+        public final int TILE_SIZE_DP = 256;
+        public final float mScaleFactor = 1;
+        public final Bitmap bitmap;
 
 
         //May not need?
@@ -495,7 +501,22 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             return new Tile((int) (TILE_SIZE_DP * mScaleFactor),
                     (int) (TILE_SIZE_DP * mScaleFactor), stream.toByteArray());
         }
+
+        public void addPoint(LatLng pos){
+            Point p = MercatorProjection(pos);
+            points.add(p);
+        }
+
+        public Point MercatorProjection(LatLng pos){
+            double x = pos.longitude / 360 + 0.5;
+            double y = 0.5 * Math.log((1+Math.sin(Math.toRadians(pos.latitude)))
+                    / (1-Math.sin(Math.toRadians(pos.latitude)))) / (-2 * Math.PI) + 0.5;
+
+            //Point only accepts int and not double?
+            return new Point(x * TILE_SIZE_DP, y * TILE_SIZE_DP);
+        }
     }
+
 
 
 
