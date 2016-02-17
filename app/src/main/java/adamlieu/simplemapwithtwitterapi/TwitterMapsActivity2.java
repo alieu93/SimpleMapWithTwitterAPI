@@ -101,12 +101,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     BitmapDescriptor desc;
 
     private float radius = 100;
-    LatLng currentPos = new LatLng(44.333304,-94.419696);
+    LatLng currentPos = new LatLng(44.333304, -94.419696);
 
     ArrayList<LatLng> newOne = new ArrayList<LatLng>();
 
     LatLngBounds bounds;
-
 
 
     @Override
@@ -144,6 +143,24 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mMap.getUiSettings().setCompassEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
+        CustomTileOverlay cto = new CustomTileOverlay();
+        cto.addPoint(new LatLng(0, 0));
+        cto.addPoint(new LatLng(21, -10));
+
+        cto.addPoint(new LatLng(44.968046, -94.420307));
+        cto.addPoint(new LatLng(44.33328, -89.132008));
+        cto.addPoint(new LatLng(33.755787, -116.359998));
+        cto.addPoint(new LatLng(33.844843, -116.54911));
+        cto.addPoint(new LatLng(44.92057, -93.44786));
+        cto.addPoint(new LatLng(44.240309, -91.493619));
+        cto.addPoint(new LatLng(44.968041, -94.419696));
+        cto.addPoint(new LatLng(44.333304, -89.132027));
+        cto.addPoint(new LatLng(33.755783, -116.360066));
+        cto.addPoint(new LatLng(33.844847, -116.549069));
+        cto.addPoint(new LatLng(44.920474, -93.447851));
+        cto.addPoint(new LatLng(44.240304, -91.493768));
+        mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
+
         //Integer limit = 1000;
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
         edit = (EditText) relative.findViewById(R.id.EditText1);
@@ -155,20 +172,19 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
                     new RetrieveTweets().execute(test);
                     hasSearched = true;
-                    newOne.add(new LatLng(43.6532, -79.3832));
                 }
             }
         });
     }
 
-    public void startAnimation(){
+    public void startAnimation() {
         final Handler handler = new Handler();
         Timer myTimer = new Timer();
-        TimerTask timertask = new TimerTask(){
+        TimerTask timertask = new TimerTask() {
             @Override
-            public void run(){
-                handler.post(new Runnable(){
-                    public void run(){
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
 
                     }
                 });
@@ -178,10 +194,10 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         myTimer.schedule(timertask, 0, 2000);
     }
 
-    private String convertDate(String tweetDate){
+    private String convertDate(String tweetDate) {
         String[] elements = tweetDate.split("\\s+");
         String month = null;
-        switch(elements[1]){
+        switch (elements[1]) {
             case "Jan":
                 month = "01";
                 break;
@@ -244,7 +260,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         return date;
     }
 
-    public List<LatLng> loadJSON(int limit, String text) throws JSONException{
+    public List<LatLng> loadJSON(int limit, String text) throws JSONException {
         //String json = null;
         List<LatLng> list = new ArrayList<>();
         boolean torontoCheck = false;
@@ -255,9 +271,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         int jsonCounter = 0;
 
-        //
-
-        try{
+        try {
             InputStream isT = getResources().openRawResource(R.raw.toronto);
             InputStream isO = getResources().openRawResource(R.raw.oshawa);
             BufferedReader torontoReader = new BufferedReader(new InputStreamReader(isT, "UTF-8"));
@@ -266,13 +280,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             String oshLine;
 
 
-
             //Read just coordinates for now
             int counter = 0;
 
             //while(((line = torontoReader.readLine()) != null) && counter < limit){
-            while(true) {
-                if(counter > limit){
+            while (true) {
+                if (counter > limit) {
                     break;
                 }
 
@@ -335,19 +348,19 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
 
                             String convertedDate = convertDate(obj.get("created_at").toString());
-                            if(tweets.has(convertedDate)){
+                            if (tweets.has(convertedDate)) {
                                 JSONObject currentDate = tweets.getJSONObject(convertedDate);
                                 jsonCounter++;
                                 JSONArray jsonCoords = new JSONArray();
                                 jsonCoords.put(pos.latitude);
                                 jsonCoords.put(pos.longitude);
-                                currentDate.put(""+jsonCounter, jsonCoords);
+                                currentDate.put("" + jsonCounter, jsonCoords);
                             } else {
                                 JSONObject json = new JSONObject();
                                 JSONArray jsonCoords = new JSONArray();
                                 jsonCoords.put(pos.latitude);
                                 jsonCoords.put(pos.longitude);
-                                json.put(""+jsonCounter, jsonCoords);
+                                json.put("" + jsonCounter, jsonCoords);
                                 tweets.put(convertedDate, json);
                                 jsonCounter = 0;
                             }
@@ -395,19 +408,19 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
 
                             String convertedDate = convertDate(oshObj.get("created_at").toString());
-                            if(tweets.has(convertedDate)){
+                            if (tweets.has(convertedDate)) {
                                 JSONObject currentDate = tweets.getJSONObject(convertedDate);
                                 jsonCounter++;
                                 JSONArray jsonCoords = new JSONArray();
                                 jsonCoords.put(pos.latitude);
                                 jsonCoords.put(pos.longitude);
-                                currentDate.put(""+jsonCounter, jsonCoords);
+                                currentDate.put("" + jsonCounter, jsonCoords);
                             } else {
                                 JSONObject json = new JSONObject();
                                 JSONArray jsonCoords = new JSONArray();
                                 jsonCoords.put(pos.latitude);
                                 jsonCoords.put(pos.longitude);
-                                json.put(""+jsonCounter, jsonCoords);
+                                json.put("" + jsonCounter, jsonCoords);
                                 tweets.put(convertedDate, json);
                                 jsonCounter = 0;
                             }
@@ -417,7 +430,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 counter = oshawaCounter + torontoCounter;
             }
             //Log.v("Read JSON:", "Success");
-        } catch (IOException ex){
+        } catch (IOException ex) {
             ex.printStackTrace();
             return null;
         }
@@ -425,7 +438,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         //TODO: Use for incrementing for time animation
         sortedUnique = new ArrayList<String>(uniqueDates);
         Collections.sort(sortedUnique);
-        for(String s : sortedUnique){
+        for (String s : sortedUnique) {
             //Log.v("Unique Dates", s);
         }
         //Log.v("Num of Coords", "" + list.size());
@@ -461,6 +474,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             //circleToMap(cachePos);
             //new TweetOverlay().draw(test);
             Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
+            CustomTileOverlay cto = new CustomTileOverlay();
+            for (LatLng l : test) {
+                cto.addPoint(l);
+            }
+            mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
             /*
             Bitmap overlay = createOverlayBitmap(points);
             BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(overlay);
@@ -479,43 +497,96 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         //Tile Overlay scale equation:
         // 2^(Zoom level)
-        private List<Point> points = new ArrayList<Point>();
+        private List<newPoint> points = new ArrayList<newPoint>();
         public final int TILE_SIZE_DP = 256;
-        public final float mScaleFactor = 1;
-        public final Bitmap bitmap;
+        public final int mScaleFactor = 2;
+        private MercatorProjection mercatorprojection = new MercatorProjection(TILE_SIZE_DP);
+        private int dimension = TILE_SIZE_DP * mScaleFactor;
+        //public final Bitmap bitmap;
+        //public final Canvas canvas = new Canvas(bitmap);
 
 
         //May not need?
         //Stuff into getTile if not needed
-        public CustomTileOverlay(Context context){
-            bitmap = Bitmap.createBitmap((int) (TILE_SIZE_DP * mScaleFactor),
-                    (int) (TILE_SIZE_DP * mScaleFactor), Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-        }
+        //public CustomTileOverlay(Context context){
+
+        //Canvas canvas = new Canvas(bitmap);
+        //Paint paint = new Paint();
+        //paint.setColor(0x7F96B0FF);
+        //}
 
         @Override
-        public Tile getTile(int x, int y, int zoom){
+        public Tile getTile(int x, int y, int zoom) {
+
+            float scale = (float) Math.pow(2, zoom) * mScaleFactor;
+
+            Matrix matrix = new Matrix();
+            matrix.postScale(scale, scale);
+            //matrix.postTranslate(-x * TILE_SIZE_DP * mScaleFactor, -y * TILE_SIZE_DP * mScaleFactor);
+            matrix.postTranslate(-x * dimension, -y * dimension);
+
+            /*Bitmap bitmap;
+            bitmap = Bitmap.createBitmap((int) (TILE_SIZE_DP * mScaleFactor),
+                    (int) (TILE_SIZE_DP * mScaleFactor), Bitmap.Config.ARGB_8888);*/
+            Bitmap bitmap = Bitmap.createBitmap(dimension, dimension, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            canvas.setMatrix(matrix);
+
+            Paint paint = new Paint();
+            paint.setColor(0x7F96B0FF);
+            for (newPoint p : points) {
+                canvas.drawCircle((float) p.x, (float) p.y, 0.001f, paint);
+            }
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
             //byte[] bitmapData = stream.toByteArray();
-            return new Tile((int) (TILE_SIZE_DP * mScaleFactor),
-                    (int) (TILE_SIZE_DP * mScaleFactor), stream.toByteArray());
+            //return new Tile((int) (TILE_SIZE_DP * mScaleFactor),
+            //       (int) (TILE_SIZE_DP * mScaleFactor), stream.toByteArray());
+            return new Tile(dimension, dimension, stream.toByteArray());
         }
 
-        public void addPoint(LatLng pos){
-            Point p = MercatorProjection(pos);
-            points.add(p);
+        public void addPoint(LatLng pos) {
+            //newPoint p = MercatorProjection(pos);
+            points.add(mercatorprojection.toPoint(pos));
         }
 
-        public Point MercatorProjection(LatLng pos){
+        public class MercatorProjection {
+            final double worldWidth;
+
+            public MercatorProjection(final double worldwidth) {
+                worldWidth = worldwidth;
+            }
+
+            public newPoint toPoint(final LatLng latlng) {
+                double x = latlng.longitude / 360 + 0.5;
+                double y = 0.5 * Math.log((1 + Math.sin(Math.toRadians(latlng.latitude)))
+                        / (1 - Math.sin(Math.toRadians(latlng.latitude)))) / (-2 * Math.PI) + 0.5;
+                return new newPoint(x * worldWidth, y * worldWidth);
+            }
+        }
+
+        /*
+        public newPoint MercatorProjection(LatLng pos){
             double x = pos.longitude / 360 + 0.5;
             double y = 0.5 * Math.log((1+Math.sin(Math.toRadians(pos.latitude)))
                     / (1-Math.sin(Math.toRadians(pos.latitude)))) / (-2 * Math.PI) + 0.5;
 
             //Point only accepts int and not double?
-            return new Point(x * TILE_SIZE_DP, y * TILE_SIZE_DP);
+            //return new Point(x * TILE_SIZE_DP, y * TILE_SIZE_DP);
+            return new newPoint(x* TILE_SIZE_DP, y * TILE_SIZE_DP);*/
+    }
+
+
+    public class newPoint {
+        public double x;
+        public double y;
+
+        public newPoint(double x, double y) {
+            this.x = x;
+            this.y = y;
         }
     }
+
 
 
 
