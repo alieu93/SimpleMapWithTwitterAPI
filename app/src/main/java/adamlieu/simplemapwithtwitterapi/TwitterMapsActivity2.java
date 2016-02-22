@@ -143,23 +143,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mMap.getUiSettings().setCompassEnabled(false);
         mMap.getUiSettings().setMapToolbarEnabled(true);
 
-        CustomTileOverlay cto = new CustomTileOverlay();
-        cto.addPoint(new LatLng(0, 0));
-        cto.addPoint(new LatLng(21, -10));
-
-        cto.addPoint(new LatLng(44.968046, -94.420307));
-        cto.addPoint(new LatLng(44.33328, -89.132008));
-        cto.addPoint(new LatLng(33.755787, -116.359998));
-        cto.addPoint(new LatLng(33.844843, -116.54911));
-        cto.addPoint(new LatLng(44.92057, -93.44786));
-        cto.addPoint(new LatLng(44.240309, -91.493619));
-        cto.addPoint(new LatLng(44.968041, -94.419696));
-        cto.addPoint(new LatLng(44.333304, -89.132027));
-        cto.addPoint(new LatLng(33.755783, -116.360066));
-        cto.addPoint(new LatLng(33.844847, -116.549069));
-        cto.addPoint(new LatLng(44.920474, -93.447851));
-        cto.addPoint(new LatLng(44.240304, -91.493768));
-        mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
 
         //Integer limit = 1000;
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
@@ -285,9 +268,10 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             //while(((line = torontoReader.readLine()) != null) && counter < limit){
             while (true) {
+                /*
                 if (counter > limit) {
                     break;
-                }
+                }*/
 
                 JSONObject obj = null;
                 JSONObject oshObj = null;
@@ -452,7 +436,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     private class RetrieveTweets extends AsyncTask<String, String, List<LatLng>> {
         Context context = getApplicationContext();
-        int limit = 20000;
+        int limit = 30000;
 
         protected List<LatLng> doInBackground(String... test) {
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
@@ -479,14 +463,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 cto.addPoint(l);
             }
             mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
-            /*
-            Bitmap overlay = createOverlayBitmap(points);
-            BitmapDescriptor desc = BitmapDescriptorFactory.fromBitmap(overlay);
-            //Need to fix bounds
-            LatLngBounds bounds = new LatLngBounds(new LatLng(33.0, -120.0), new LatLng(45.0, -85.0));
-            Log.v("Bounds", "" + bounds);
-            GroundOverlay t = mMap.addGroundOverlay(new GroundOverlayOptions().image(desc).positionFromBounds(bounds));
-            Log.v("Overlay POS", "" + t.getPosition());*/
         }
     }
 
@@ -587,30 +563,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         }
     }
 
-
-
-
-
-    public Bitmap createOverlayBitmap(List<LatLng> point) {
-        Paint opaque50 = new Paint();
-        opaque50.setARGB(128, 0, 0, 255);
-
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = size.x;
-        int height = size.y;
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        for (LatLng pos : point) {
-            Point screenPos = toPixels(pos);
-            canvas.drawCircle((float) screenPos.x, (float) screenPos.y, radius, opaque50);
-        }
-        return bitmap;
-    }
-
-
         private Point toPixels(LatLng latlng) {
             return mMap.getProjection().toScreenLocation(latlng);
         }
@@ -638,10 +590,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             .image(desc)
                             .position(i, 150)
             );
-            //Log.v("Adding point:", "" + i);
-            //counter++;
-
-            //if(counter > limit) break;
         }
     }
 
