@@ -51,4 +51,9 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, TestMapsActivity.class);
         startActivity(intent);
     }
+
+    public void goToTestSeekBar(View view){
+        Intent intent = new Intent(this, TestSeekBar.class);
+        startActivity(intent);
+    }
 }

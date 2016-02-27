@@ -51,6 +51,10 @@
             android:name=".TestMapsActivity"
             android:label="@string/title_activity_test_maps" >
         </activity>
+        <activity
+            android:name=".TestSeekBar"
+            android:label="@string/title_activity_test_seek_bar" >
+        </activity>
     </application>
 
 </manifest>

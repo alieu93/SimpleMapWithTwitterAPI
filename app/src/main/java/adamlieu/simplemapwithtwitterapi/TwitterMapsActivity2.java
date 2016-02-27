@@ -78,6 +78,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     Button searchButton;
     RelativeLayout relative;
     boolean hasSearched = false;
+    boolean show = true;
+
 
     LatLng UOIT = new LatLng(43.945791, -78.894689);
 
@@ -90,6 +92,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     //JSON created to store the coordinates under dates
     JSONObject tweets = new JSONObject();
+    TileOverlay tile;
 
 
     private GoogleMap mMap;
@@ -155,7 +158,17 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
                     new RetrieveTweets().execute(test);
                     hasSearched = true;
+                } else {
+                    if(show) {
+                        tile.setVisible(false);
+                        show = false;
+                    } else {
+                        tile.setVisible(true);
+                        show = true;
+                    }
+
                 }
+
             }
         });
     }
@@ -303,6 +316,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
                             //Log.v("Toronto Tweet Text:", obj.get("text").toString());
 
+                            /*
                             //Remove later
                             List<String> matchList = new ArrayList<String>();
                             Pattern regex = Pattern.compile("\\#.*?\\s");
@@ -313,7 +327,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                     //Log.v("Toronto Regex", str);
                                     listTrends.add(str);
                                 }
-                            }
+                            }*/
 
                             //Log.v("Tweet Date:", obj.get("created_at").toString());
 
@@ -331,6 +345,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             //Log.v("Toronto Coord Counter:", "" + torontoCounter);
 
 
+                            /*
                             String convertedDate = convertDate(obj.get("created_at").toString());
                             if (tweets.has(convertedDate)) {
                                 JSONObject currentDate = tweets.getJSONObject(convertedDate);
@@ -347,7 +362,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 json.put("" + jsonCounter, jsonCoords);
                                 tweets.put(convertedDate, json);
                                 jsonCounter = 0;
-                            }
+                            }*/
                         }
                     }
                 }
@@ -362,6 +377,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
                             //Log.v("Oshawa Tweet Text:", oshObj.get("text").toString());
 
+                            /*
                             //Remove later
                             List<String> matchList = new ArrayList<String>();
                             Pattern regex = Pattern.compile("\\#.*?\\s");
@@ -372,7 +388,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                     //Log.v("Oshawa Regex", str);
                                     listTrends.add(str);
                                 }
-                            }
+                            }*/
 
                             //Log.v("Oshawa Tweet Date:", oshObj.get("created_at").toString());
                             convertDate(oshObj.get("created_at").toString());
@@ -391,6 +407,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             //Log.v("Oshawa Coord Counter:", "" + oshawaCounter);
 
 
+                            /*
                             String convertedDate = convertDate(oshObj.get("created_at").toString());
                             if (tweets.has(convertedDate)) {
                                 JSONObject currentDate = tweets.getJSONObject(convertedDate);
@@ -407,7 +424,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 json.put("" + jsonCounter, jsonCoords);
                                 tweets.put(convertedDate, json);
                                 jsonCounter = 0;
-                            }
+                            }*/
                         }
                     }
                 }
@@ -420,11 +437,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         }
 
         //TODO: Use for incrementing for time animation
+        /*
         sortedUnique = new ArrayList<String>(uniqueDates);
         Collections.sort(sortedUnique);
         for (String s : sortedUnique) {
             //Log.v("Unique Dates", s);
-        }
+        }*/
         //Log.v("Num of Coords", "" + list.size());
         //Log.v("JSON", "" + tweets);
 
@@ -462,7 +480,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             for (LatLng l : test) {
                 cto.addPoint(l);
             }
-            mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
+            tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
         }
     }
 
