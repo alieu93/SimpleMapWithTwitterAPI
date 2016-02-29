@@ -35,20 +35,38 @@
         android:layout_above="@+id/map"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" >
+        android:orientation="horizontal"
+        android:alpha="0.8" >
 
-        <Button
-            android:id="@+id/button1"
+        <SeekBar
+            android:id="@+id/seekBar"
+            android:background="#ffeeeeee"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Search"
-            android:layout_alignParentRight="true" />
-        <EditText
-            android:id="@+id/EditText1"
-            android:layout_width="fill_parent"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true" />
+        <SeekBar
+            android:id="@+id/seekBar2"
+            android:background="#ffeeeeee"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:layout_toLeftOf="@id/button1" />
+            android:layout_below="@+id/seekBar"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignRight="@+id/seekBar"
+            android:layout_alignEnd="@+id/seekBar" />
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#ffeeeeee"
+            android:text=""
+            android:layout_below="@+id/seekBar2"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
     </RelativeLayout>
 
 
