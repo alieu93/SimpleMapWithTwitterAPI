@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
@@ -23,14 +22,12 @@ import android.support.v4.content.ContextCompat;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
-import android.view.Display;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -41,10 +38,6 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.GroundOverlay;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -64,6 +57,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -100,6 +94,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     List<String> listDates = new ArrayList<String>();
 
     List<String> sortedUnique;
+
+
 
     Set<String> unique;
     Set<String> uniqueDates = new HashSet<String>();
@@ -147,7 +143,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             });
             alertDialog.show();
         }
-
         //mMap = ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_twitter_maps2);
@@ -167,7 +162,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
 
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
-        new RetrieveTweets().execute(5);
+        //new RetrieveTweets().execute(5);
         //edit = (EditText) relative.findViewById(R.id.EditText1);
         //searchButton = (Button) relative.findViewById(R.id.button1);
         /*searchButton.setOnClickListener(new View.OnClickListener() {
@@ -221,7 +216,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 progress = progressValue;
                 //upperRange = seekBar2.getProgress() + seekBar1.getMax();
                 int range = seekBar2.getProgress() - seekBar1.getMax();
-                if(seekBar2.getProgress() - seekBar1.getMax() < 0){
+                if (seekBar2.getProgress() - seekBar1.getMax() < 0) {
                     seekBar1.setProgress(seekBar2.getProgress());
                     seekBar2.setProgress(seekBar2.getProgress() + 1);
                 } else {
@@ -235,11 +230,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                textView.setText("Range: " + sortedUnique.get(seekBar1.getProgress()) + " to " + sortedUnique.get(seekBar2.getProgress()-1)
+                textView.setText("Range: " + sortedUnique.get(seekBar1.getProgress()) + " to " + sortedUnique.get(seekBar2.getProgress() - 1)
                         + "   " + seekBar1.getProgress() + "---" + seekBar2.getProgress());
                 try {
                     loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
-                } catch (JSONException e){
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
@@ -249,27 +244,29 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             int progress = 0;
 
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser){
+            public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
                 progress = progressValue;
                 //upperRange = seekBar2.getProgress() + seekBar1.getMax();
                 //upperRange = seekBar2.getProgress() - seekBar1.getMax();
-                if(seekBar2.getProgress() < seekBar1.getProgress()){
+                if (seekBar2.getProgress() < seekBar1.getProgress()) {
                     seekBar2.setProgress(seekBar1.getProgress() + 1);
                 } else {
                     seekBar2.setProgress(progress);
                 }
             }
+
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar){
+            public void onStartTrackingTouch(SeekBar seekBar) {
             }
+
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar){
+            public void onStopTrackingTouch(SeekBar seekBar) {
 
                 textView.setText("Range: " + sortedUnique.get(seekBar1.getProgress()) + " to " + sortedUnique.get(seekBar2.getProgress() - 1)
-                + "   " + seekBar1.getProgress() + "---" + seekBar2.getProgress());
+                        + "   " + seekBar1.getProgress() + "---" + seekBar2.getProgress());
                 try {
                     loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
-                } catch (JSONException e){
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
@@ -278,38 +275,45 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     }
     private void addDrawer(){
-        String[] testArray = { "1 hour", "3 hour", "1 day", "1 week", "All"};
+        String[] testArray = { "6 hours", "12 hours", "1 day", "1 week", "All"};
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, testArray);
         mDrawerList.setAdapter(mAdapter);
+        mDrawerLayout.openDrawer(Gravity.LEFT);
     }
 
     private void loadInterval(int range1, int range2) throws JSONException{
+        final long t0 = System.currentTimeMillis(); //TIMER
+
         CustomTileOverlay cto = new CustomTileOverlay();
         mMap.clear();
         //tile.clearTileCache();
         for(int i=range1; i <= range2; i++){
             //tweets.get(sortedUnique.get(i));
             JSONObject date = new JSONObject(tweets.get(sortedUnique.get(i)).toString());
-            //Log.v("JSONObject", ""+date+"\t"+sortedUnique.get(i));
+            Log.v("JSONObject", ""+date+"\t"+sortedUnique.get(i));
             Iterator key = date.keys();
-            while(key.hasNext()){
-                String k = key.next().toString();
-                String test = date.getString(k);
-                test = test.replace("[", "");
-                test = test.replace("]", "");
-                String[] elements = test.split(",");
+                while (key.hasNext()) {
+                    String k = key.next().toString();
+                    String test = date.getString(k);
+                    test = test.replace("[", "");
+                    test = test.replace("]", "");
+                    String[] elements = test.split(",");
 
-                Double lat = Double.parseDouble(elements[0]);
-                Double lng = Double.parseDouble(elements[1]);
-                LatLng coords = new LatLng(lat, lng);
-                cto.addPoint(coords);
+                    Double lat = Double.parseDouble(elements[0]);
+                    Double lng = Double.parseDouble(elements[1]);
+                    LatLng coords = new LatLng(lat, lng);
+                    cto.addPoint(coords);
 
-                //Log.v("Coords", test);
-                //Log.v("Range test", ""+k + "\t" + date.getString(k));
-            }
+                    //Log.v("Coords", test);
+                    //Log.v("Range test", ""+k + "\t" + date.getString(k));
+                }
         }
+        final long elapsedTimeMillis = System.currentTimeMillis() - t0; //TIMER
+        Log.v("loadInterval Timer JSON", "" + elapsedTimeMillis);
+        //final long t1 = System.currentTimeMillis(); //TIMER
         tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
-
+        //final long t1_elapsed = System.currentTimeMillis() - t1; //TIMER
+        //Log.v("loadInterval Tile", t1_elapsed+"");
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
@@ -320,14 +324,24 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             switch(position) {
                 case 0:
+                    new RetrieveTweets().execute(1);
+                    mDrawerLayout.closeDrawers();
                     break;
                 case 1:
+                    new RetrieveTweets().execute(2);
+                    mDrawerLayout.closeDrawers();
                     break;
                 case 2:
+                    new RetrieveTweets().execute(3);
+                    mDrawerLayout.closeDrawers();
                     break;
                 case 3:
+                    new RetrieveTweets().execute(4);
+                    mDrawerLayout.closeDrawers();
                     break;
                 case 4:
+                    new RetrieveTweets().execute(5);
+                    mDrawerLayout.closeDrawers();
                     break;
             }
 
@@ -386,8 +400,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         //HH:MM:SS
         //Log.v("TimeElements", timeElements[0]+":"+timeElements[1]+":"+timeElements[2]);
         String date;
-        SimpleDateFormat format;
-        Calendar cal = Calendar.getInstance();
+        //SimpleDateFormat format;
+        //Calendar cal = Calendar.getInstance();
         if(withHour) {
             //date = elements[5] + "-" + month + "-" + elements[2] + "-" +
             //        timeElements[0] + ":" + timeElements[1] + ":" + timeElements[2];
@@ -398,7 +412,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             date = elements[5] + "-" + month + "-" + elements[2];
         }
 
-        uniqueDates.add(date);
+        //uniqueDates.add(date);
         return date;
     }
 
@@ -421,14 +435,14 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 format = new SimpleDateFormat("yyyy-MM-dd-HH");
                 cal.set(year, month, day, hour, 0, 0);
                 //Can't seem to actually increment a day, so increment a month and a day then decrement a month
-                cal.add(Calendar.HOUR_OF_DAY, 1);
+                cal.add(Calendar.HOUR_OF_DAY, 6);
                 cal.add(Calendar.MONTH, -1);
                 break;
             case 2:
                 format = new SimpleDateFormat("yyyy-MM-dd-HH");
                 cal.set(year, month, day, hour, 0, 0);
                 //Can't seem to actually increment a day, so increment a month and a day then decrement a month
-                cal.add(Calendar.HOUR_OF_DAY, 3);
+                cal.add(Calendar.HOUR_OF_DAY, 12);
                 cal.add(Calendar.MONTH, -1);
                 break;
             case 3:
@@ -463,10 +477,13 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         boolean torontoCheck = false;
         boolean oshawaCheck = false;
         boolean hour;
+        final DateFormat format;
         if(mode < 3){
             hour = true;
+            format = new SimpleDateFormat("yyyy-MM-dd-HH");
         } else {
             hour = false;
+            format = new SimpleDateFormat("yyyy-MM-dd");
         }
 
         int oshawaCounter = 0;
@@ -486,6 +503,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             String torLine;
             String oshLine;
 
+            final long jsonRead_t0 = System.currentTimeMillis(); //TIMER
             while (true) {
                 JSONObject obj = null;
                 JSONObject oshObj = null;
@@ -507,10 +525,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     break;
                 }
 
+                final long torontoTimer = System.nanoTime(); //System.currentTimeMillis(); //TIMER
                 //Toronto
                 if (!torontoCheck) {
                     if (obj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
                         if (!obj.isNull("coordinates")) {
+
 
                             JSONObject coords = new JSONObject(obj.get("coordinates").toString());
                             JSONArray latlng = coords.getJSONArray("coordinates");
@@ -527,8 +547,58 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             list.add(pos);
                             torontoCounter++;
 
+
+
                             String convertedDate = convertDate(obj.get("created_at").toString(), hour);
-                            listDates.add(convertedDate);
+                            //listDates.add(convertedDate);
+
+                            //Initialize intervals at beginning, first part of if statement should only ever execute at the very beginning
+                            if(torontoNextDate == null || torontoCurrentInterval == null){
+                                torontoNextDate = getNextDate(convertedDate, mode);
+                                torontoCurrentInterval = convertedDate;
+                                uniqueDates.add(convertedDate);
+
+                                JSONObject json = new JSONObject();
+                                JSONArray jsonCoords = new JSONArray();
+                                jsonCoords.put(pos.latitude);
+                                jsonCoords.put(pos.longitude);
+                                json.put("" + jsonCounter, jsonCoords);
+                                tweets.put(torontoCurrentInterval, json);
+                                jsonCounter = 0;
+                            } else {
+                                try {
+                                    Date current = format.parse(convertedDate);
+                                    Date nextInterval = format.parse(torontoNextDate);
+
+                                    //If the current line has a date equal to the next interval, we set a new interval
+                                    //if(current.after(nextInterval) || current.equals(nextInterval)){
+                                    if(current.after(nextInterval)){
+                                        //torontoCurrentInterval = torontoNextDate;
+                                        torontoCurrentInterval = convertedDate;
+                                        torontoNextDate = getNextDate(convertedDate, mode);
+                                        uniqueDates.add(convertedDate);
+
+                                        JSONObject json = new JSONObject();
+                                        JSONArray jsonCoords = new JSONArray();
+                                        jsonCoords.put(pos.latitude);
+                                        jsonCoords.put(pos.longitude);
+                                        json.put("" + jsonCounter, jsonCoords);
+                                        tweets.put(torontoCurrentInterval, json);
+                                        jsonCounter = 0;
+                                    //If still in current time interval, place it in that category
+                                    } else {
+                                        JSONObject currentDate = tweets.getJSONObject(torontoCurrentInterval);
+                                        jsonCounter++;
+                                        JSONArray jsonCoords = new JSONArray();
+                                        jsonCoords.put(pos.latitude);
+                                        jsonCoords.put(pos.longitude);
+                                        currentDate.put("" + jsonCounter, jsonCoords);
+                                    }
+                                } catch(ParseException e){
+                                    e.printStackTrace();
+                                }
+                            }
+
 
                             /*
                             if(torontoNextDate == null){
@@ -543,6 +613,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 tweets.put(torontoNextDate, null);
                                 //Log.v("nextdate", convertedDate + "/////" + torontoNextDate);
                             }*/
+                            /*
                             if (tweets.has(convertedDate)) {
                                 JSONObject currentDate = tweets.getJSONObject(convertedDate);
                                 jsonCounter++;
@@ -558,11 +629,14 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 json.put("" + jsonCounter, jsonCoords);
                                 tweets.put(convertedDate, json);
                                 jsonCounter = 0;
-                            }
+                            }*/
                         }
                     }
                 }
+                final long torontoTimerEnd = System.nanoTime() - torontoTimer; //System.currentTimeMillis() - torontoTimer; //TIMER
+                Log.v("loadJSON torontoTimer", torontoTimerEnd + " nanoseconds"); //TIMER
 
+                final long oshawaTimer = System.nanoTime(); //System.currentTimeMillis(); //TIMER
                 //Oshawa
                 if (!oshawaCheck) {
                     if (oshObj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
@@ -584,12 +658,60 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
 
                             String convertedDate = convertDate(oshObj.get("created_at").toString(), hour);
-                            listDates.add(convertedDate);
+
+                            //Initialize intervals at beginning, first part of if statement should only ever execute at the very beginning
+                            if(oshawaNextDate == null || oshawaCurrentInterval == null){
+                                oshawaNextDate = getNextDate(convertedDate, mode);
+                                oshawaCurrentInterval = convertedDate;
+                                uniqueDates.add(convertedDate);
+
+                                JSONObject json = new JSONObject();
+                                JSONArray jsonCoords = new JSONArray();
+                                jsonCoords.put(pos.latitude);
+                                jsonCoords.put(pos.longitude);
+                                json.put("" + jsonCounter, jsonCoords);
+                                tweets.put(convertedDate, json);
+                                jsonCounter = 0;
+                            } else {
+                                try {
+                                    Date current = format.parse(convertedDate);
+                                    Date nextInterval = format.parse(oshawaNextDate);
+
+                                    //If the current line has a date equal to the next interval, we set a new interval
+                                    //if(current.after(nextInterval) || current.equals(nextInterval)){
+                                    if(current.after(nextInterval)){
+                                        //oshawaCurrentInterval = oshawaNextDate;
+                                        oshawaCurrentInterval = convertedDate;
+                                        oshawaNextDate = getNextDate(convertedDate, mode);
+                                        uniqueDates.add(oshawaCurrentInterval);
+
+                                        JSONObject json = new JSONObject();
+                                        JSONArray jsonCoords = new JSONArray();
+                                        jsonCoords.put(pos.latitude);
+                                        jsonCoords.put(pos.longitude);
+                                        json.put("" + jsonCounter, jsonCoords);
+                                        tweets.put(oshawaCurrentInterval, json);
+                                        jsonCounter = 0;
+                                        //If still in current time interval, place it in that category
+                                    } else {
+                                        JSONObject currentDate = tweets.getJSONObject(oshawaCurrentInterval);
+                                        jsonCounter++;
+                                        JSONArray jsonCoords = new JSONArray();
+                                        jsonCoords.put(pos.latitude);
+                                        jsonCoords.put(pos.longitude);
+                                        currentDate.put("" + jsonCounter, jsonCoords);
+                                    }
+                                } catch(ParseException e){
+                                    e.printStackTrace();
+                                }
+                            }
+                            //listDates.add(convertedDate);
                             //Log.v("Oshawa Coord Counter:", "" + oshawaCounter);
                             /*
                             if(!convertedDate.equals(oshawaNextDate)) {
                                 oshawaNextDate = getNextDate(convertedDate, mode);
                             }*/
+                            /*
                             if (tweets.has(convertedDate)) {
                                 JSONObject currentDate = tweets.getJSONObject(convertedDate);
                                 jsonCounter++;
@@ -605,18 +727,21 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 json.put("" + jsonCounter, jsonCoords);
                                 tweets.put(convertedDate, json);
                                 jsonCounter = 0;
-                            }
+                            }*/
                         }
+                        final long oshawaTimerEnd = System.nanoTime() - oshawaTimer; //System.currentTimeMillis() - oshawaTimer;
+                        Log.v("loadJSON oshawaTimer", oshawaTimerEnd + " nanoseconds");
                     }
                 }
                 //counter = oshawaCounter + torontoCounter;
             }
+            final long jsonRead_t1 = System.currentTimeMillis() - jsonRead_t0; //TIMER
+            Log.v("loadJSON Timer", jsonRead_t1 + ""); //TIMER
             //Log.v("Read JSON:", "Success");
         } catch (IOException ex) {
             ex.printStackTrace();
             return null;
         }
-
 
         sortedUnique = new ArrayList<String>(uniqueDates);
         Collections.sort(sortedUnique);
@@ -631,6 +756,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         return list;
     }
+
 
 
     private class RetrieveTweets extends AsyncTask<Integer, Integer, List<LatLng>> {
@@ -660,18 +786,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
             initializeSeekBar();
 
-            /*
+
             CustomTileOverlay cto = new CustomTileOverlay();
             for (LatLng l : test) {
                 cto.addPoint(l);
             }
-            tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));*/
-            /*
-            try {
-                loadInterval(1, 2);
-            } catch (JSONException e){
-                e.printStackTrace();
-            }*/
+            tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
         }
     }
 
@@ -718,6 +838,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             canvas.setMatrix(matrix);
 
             Paint paint = new Paint();
+            //TODO: Different Colour circles as they expand outwards
             paint.setColor(0x7F96B0FF);
             for (newPoint p : points) {
                 canvas.drawCircle((float) p.x, (float) p.y, 0.001f, paint);
