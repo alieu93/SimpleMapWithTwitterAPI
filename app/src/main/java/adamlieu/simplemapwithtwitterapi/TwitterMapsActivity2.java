@@ -15,7 +15,6 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -62,11 +61,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -94,6 +96,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     List<String> listDates = new ArrayList<String>();
 
     List<String> sortedUnique;
+
+    Map<String, ArrayList<LatLng>> tweetMap = new HashMap<String, ArrayList<LatLng>>();
 
 
 
@@ -214,9 +218,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
                 progress = progressValue;
-                //upperRange = seekBar2.getProgress() + seekBar1.getMax();
-                int range = seekBar2.getProgress() - seekBar1.getMax();
-                if (seekBar2.getProgress() - seekBar1.getMax() < 0) {
+                if(seekBar2.getProgress() < seekBar1.getProgress()){
                     seekBar1.setProgress(seekBar2.getProgress());
                     seekBar2.setProgress(seekBar2.getProgress() + 1);
                 } else {
@@ -288,25 +290,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mMap.clear();
         //tile.clearTileCache();
         for(int i=range1; i <= range2; i++){
-            //tweets.get(sortedUnique.get(i));
-            JSONObject date = new JSONObject(tweets.get(sortedUnique.get(i)).toString());
-            Log.v("JSONObject", ""+date+"\t"+sortedUnique.get(i));
-            Iterator key = date.keys();
-                while (key.hasNext()) {
-                    String k = key.next().toString();
-                    String test = date.getString(k);
-                    test = test.replace("[", "");
-                    test = test.replace("]", "");
-                    String[] elements = test.split(",");
-
-                    Double lat = Double.parseDouble(elements[0]);
-                    Double lng = Double.parseDouble(elements[1]);
-                    LatLng coords = new LatLng(lat, lng);
-                    cto.addPoint(coords);
-
-                    //Log.v("Coords", test);
-                    //Log.v("Range test", ""+k + "\t" + date.getString(k));
-                }
+            String date = sortedUnique.get(i);
+            ArrayList<LatLng> test = new ArrayList<LatLng>();
+            test = tweetMap.get(date);
+            for(LatLng l : test){
+                cto.addPoint(l);
+            }
         }
         final long elapsedTimeMillis = System.currentTimeMillis() - t0; //TIMER
         Log.v("loadInterval Timer JSON", "" + elapsedTimeMillis);
@@ -328,7 +317,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     mDrawerLayout.closeDrawers();
                     break;
                 case 1:
-                    new RetrieveTweets().execute(2);
+                     new RetrieveTweets().execute(2);
                     mDrawerLayout.closeDrawers();
                     break;
                 case 2:
@@ -486,10 +475,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             format = new SimpleDateFormat("yyyy-MM-dd");
         }
 
-        int oshawaCounter = 0;
-        int torontoCounter = 0;
-
-        int jsonCounter = 0;
         String torontoNextDate = null;
         String oshawaNextDate = null;
         String torontoCurrentInterval = null;
@@ -545,7 +530,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             double lng = Double.parseDouble(latlng.get(0).toString());
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
-                            torontoCounter++;
 
 
 
@@ -558,13 +542,9 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 torontoCurrentInterval = convertedDate;
                                 uniqueDates.add(convertedDate);
 
-                                JSONObject json = new JSONObject();
-                                JSONArray jsonCoords = new JSONArray();
-                                jsonCoords.put(pos.latitude);
-                                jsonCoords.put(pos.longitude);
-                                json.put("" + jsonCounter, jsonCoords);
-                                tweets.put(torontoCurrentInterval, json);
-                                jsonCounter = 0;
+                                ArrayList<LatLng> test = new ArrayList<LatLng>();
+                                test.add(pos);
+                                tweetMap.put(torontoCurrentInterval, test);
                             } else {
                                 try {
                                     Date current = format.parse(convertedDate);
@@ -578,58 +558,20 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                         torontoNextDate = getNextDate(convertedDate, mode);
                                         uniqueDates.add(convertedDate);
 
-                                        JSONObject json = new JSONObject();
-                                        JSONArray jsonCoords = new JSONArray();
-                                        jsonCoords.put(pos.latitude);
-                                        jsonCoords.put(pos.longitude);
-                                        json.put("" + jsonCounter, jsonCoords);
-                                        tweets.put(torontoCurrentInterval, json);
-                                        jsonCounter = 0;
+                                        ArrayList<LatLng> test = new ArrayList<LatLng>();
+                                        test.add(pos);
+                                        tweetMap.put(torontoCurrentInterval, test);
+
                                     //If still in current time interval, place it in that category
                                     } else {
-                                        JSONObject currentDate = tweets.getJSONObject(torontoCurrentInterval);
-                                        jsonCounter++;
-                                        JSONArray jsonCoords = new JSONArray();
-                                        jsonCoords.put(pos.latitude);
-                                        jsonCoords.put(pos.longitude);
-                                        currentDate.put("" + jsonCounter, jsonCoords);
+                                        ArrayList test = tweetMap.get(torontoCurrentInterval);
+                                        test.add(pos);
+                                        tweetMap.put(torontoCurrentInterval, test);
                                     }
                                 } catch(ParseException e){
                                     e.printStackTrace();
                                 }
                             }
-
-
-                            /*
-                            if(torontoNextDate == null){
-                                Log.v("Startup", "Toronto");
-                                tweets.put(convertedDate, null);
-                                torontoCurrentInterval = convertedDate;
-                                uniqueDates.add(torontoCurrentInterval);
-                            }
-                            //if(!convertedDate.equals(torontoNextDate)) {
-                            if(!torontoCurrentInterval.equals(torontoNextDate)){
-                                torontoNextDate = getNextDate(convertedDate, mode);
-                                tweets.put(torontoNextDate, null);
-                                //Log.v("nextdate", convertedDate + "/////" + torontoNextDate);
-                            }*/
-                            /*
-                            if (tweets.has(convertedDate)) {
-                                JSONObject currentDate = tweets.getJSONObject(convertedDate);
-                                jsonCounter++;
-                                JSONArray jsonCoords = new JSONArray();
-                                jsonCoords.put(pos.latitude);
-                                jsonCoords.put(pos.longitude);
-                                currentDate.put("" + jsonCounter, jsonCoords);
-                            } else {
-                                JSONObject json = new JSONObject();
-                                JSONArray jsonCoords = new JSONArray();
-                                jsonCoords.put(pos.latitude);
-                                jsonCoords.put(pos.longitude);
-                                json.put("" + jsonCounter, jsonCoords);
-                                tweets.put(convertedDate, json);
-                                jsonCounter = 0;
-                            }*/
                         }
                     }
                 }
@@ -654,7 +596,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             double lng = Double.parseDouble(latlng.get(0).toString());
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
-                            oshawaCounter++;
 
 
                             String convertedDate = convertDate(oshObj.get("created_at").toString(), hour);
@@ -665,13 +606,9 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                 oshawaCurrentInterval = convertedDate;
                                 uniqueDates.add(convertedDate);
 
-                                JSONObject json = new JSONObject();
-                                JSONArray jsonCoords = new JSONArray();
-                                jsonCoords.put(pos.latitude);
-                                jsonCoords.put(pos.longitude);
-                                json.put("" + jsonCounter, jsonCoords);
-                                tweets.put(convertedDate, json);
-                                jsonCounter = 0;
+                                ArrayList<LatLng> test = new ArrayList<LatLng>();
+                                test.add(pos);
+                                tweetMap.put(oshawaCurrentInterval, test);
                             } else {
                                 try {
                                     Date current = format.parse(convertedDate);
@@ -685,55 +622,24 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                         oshawaNextDate = getNextDate(convertedDate, mode);
                                         uniqueDates.add(oshawaCurrentInterval);
 
-                                        JSONObject json = new JSONObject();
-                                        JSONArray jsonCoords = new JSONArray();
-                                        jsonCoords.put(pos.latitude);
-                                        jsonCoords.put(pos.longitude);
-                                        json.put("" + jsonCounter, jsonCoords);
-                                        tweets.put(oshawaCurrentInterval, json);
-                                        jsonCounter = 0;
-                                        //If still in current time interval, place it in that category
+                                        ArrayList<LatLng> test = new ArrayList<LatLng>();
+                                        test.add(pos);
+                                        tweetMap.put(oshawaCurrentInterval, test);
                                     } else {
-                                        JSONObject currentDate = tweets.getJSONObject(oshawaCurrentInterval);
-                                        jsonCounter++;
-                                        JSONArray jsonCoords = new JSONArray();
-                                        jsonCoords.put(pos.latitude);
-                                        jsonCoords.put(pos.longitude);
-                                        currentDate.put("" + jsonCounter, jsonCoords);
+                                        //If still in current time interval, place it in that category
+                                        ArrayList test = tweetMap.get(oshawaCurrentInterval);
+                                        test.add(pos);
+                                        tweetMap.put(oshawaCurrentInterval, test);
                                     }
                                 } catch(ParseException e){
                                     e.printStackTrace();
                                 }
                             }
-                            //listDates.add(convertedDate);
-                            //Log.v("Oshawa Coord Counter:", "" + oshawaCounter);
-                            /*
-                            if(!convertedDate.equals(oshawaNextDate)) {
-                                oshawaNextDate = getNextDate(convertedDate, mode);
-                            }*/
-                            /*
-                            if (tweets.has(convertedDate)) {
-                                JSONObject currentDate = tweets.getJSONObject(convertedDate);
-                                jsonCounter++;
-                                JSONArray jsonCoords = new JSONArray();
-                                jsonCoords.put(pos.latitude);
-                                jsonCoords.put(pos.longitude);
-                                currentDate.put("" + jsonCounter, jsonCoords);
-                            } else {
-                                JSONObject json = new JSONObject();
-                                JSONArray jsonCoords = new JSONArray();
-                                jsonCoords.put(pos.latitude);
-                                jsonCoords.put(pos.longitude);
-                                json.put("" + jsonCounter, jsonCoords);
-                                tweets.put(convertedDate, json);
-                                jsonCounter = 0;
-                            }*/
                         }
                         final long oshawaTimerEnd = System.nanoTime() - oshawaTimer; //System.currentTimeMillis() - oshawaTimer;
                         Log.v("loadJSON oshawaTimer", oshawaTimerEnd + " nanoseconds");
                     }
                 }
-                //counter = oshawaCounter + torontoCounter;
             }
             final long jsonRead_t1 = System.currentTimeMillis() - jsonRead_t0; //TIMER
             Log.v("loadJSON Timer", jsonRead_t1 + ""); //TIMER
@@ -752,7 +658,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         //Log.v("JSON", "" + tweets);
 
         //Get all elements under a specified date
-        Log.v("JSON", tweets.get(sortedUnique.get(0)).toString());
+        Log.v("HashMap", tweetMap.get(sortedUnique.get(0)).toString());
+        Log.v("HashMap", "" + tweetMap.keySet());
 
         return list;
     }
@@ -837,11 +744,16 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             Canvas canvas = new Canvas(bitmap);
             canvas.setMatrix(matrix);
 
-            Paint paint = new Paint();
+            Paint exteriorPaint = new Paint();
+            Paint interiorPaint = new Paint();
             //TODO: Different Colour circles as they expand outwards
-            paint.setColor(0x7F96B0FF);
+            //exteriorPaint.setColor(0x7F96B0FF);
+            exteriorPaint.setColor(0x3F96B0FF);
+            interiorPaint.setColor(0x7F45E3C1);
+
             for (newPoint p : points) {
-                canvas.drawCircle((float) p.x, (float) p.y, 0.001f, paint);
+                canvas.drawCircle((float) p.x, (float) p.y, 0.0005f, interiorPaint);
+                canvas.drawCircle((float) p.x, (float) p.y, 0.001f, exteriorPaint);
             }
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
@@ -896,6 +808,29 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         private Point toPixels(LatLng latlng) {
             return mMap.getProjection().toScreenLocation(latlng);
         }
+
+    public class Tweets{
+        private Double Lat;
+        private Double Lng;
+        private Collection<LatLng> coordinates = Collections.emptyList();
+
+        public Tweets(Double Lat, Double Lng){
+            this.Lat = Lat;
+            this.Lng = Lng;
+        }
+
+        public Double getLat(){
+            return Lat;
+        }
+
+        public Double getLng(){
+            return Lng;
+        }
+
+        public String toString(){
+            return Lat + ", " + Lng;
+        }
+    }
 
 
     /**
