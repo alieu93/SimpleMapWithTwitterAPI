@@ -286,16 +286,37 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     private void loadInterval(int range1, int range2) throws JSONException{
         final long t0 = System.currentTimeMillis(); //TIMER
 
+        int intervalRange = range2 - range1;
+        double perInterval = 100 / (double) intervalRange;
+        double singleInterval = perInterval;
+
         CustomTileOverlay cto = new CustomTileOverlay();
         mMap.clear();
         //tile.clearTileCache();
         for(int i=range1; i <= range2; i++){
+            Paint paint = new Paint();
+            //double red = (1 - alpha) * 255;
+            double red = (255 * singleInterval) / 100;
+            double green = (255 * (100 - singleInterval)) / 100;
+            double blue = 0;
+            double alpha = (255 * singleInterval) / 100;
+
+            if(red > 255) red = 255;
+            if(red < 0) red = 0;
+            if(green > 255) green = 255;
+            if(green < 0) green = 0;
+            if(alpha > 255) alpha = 255;
+            if(alpha < 50) alpha = 50;
+            //Log.v("Color Calculation", singleInterval + "   " + perInterval + " R:" + (int) red + " G:" + (int) green + "  A:" + (int) alpha);
+            paint.setARGB((int) alpha, (int) red, (int) green, (int) blue);
             String date = sortedUnique.get(i);
             ArrayList<LatLng> test = new ArrayList<LatLng>();
             test = tweetMap.get(date);
+
             for(LatLng l : test){
-                cto.addPoint(l);
+                cto.addPoint(l, paint);
             }
+            singleInterval += perInterval;
         }
         final long elapsedTimeMillis = System.currentTimeMillis() - t0; //TIMER
         Log.v("loadInterval Timer JSON", "" + elapsedTimeMillis);
@@ -576,7 +597,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     }
                 }
                 final long torontoTimerEnd = System.nanoTime() - torontoTimer; //System.currentTimeMillis() - torontoTimer; //TIMER
-                Log.v("loadJSON torontoTimer", torontoTimerEnd + " nanoseconds"); //TIMER
+                //Log.v("loadJSON torontoTimer", torontoTimerEnd + " nanoseconds"); //TIMER
 
                 final long oshawaTimer = System.nanoTime(); //System.currentTimeMillis(); //TIMER
                 //Oshawa
@@ -637,7 +658,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             }
                         }
                         final long oshawaTimerEnd = System.nanoTime() - oshawaTimer; //System.currentTimeMillis() - oshawaTimer;
-                        Log.v("loadJSON oshawaTimer", oshawaTimerEnd + " nanoseconds");
+                        //Log.v("loadJSON oshawaTimer", oshawaTimerEnd + " nanoseconds");
                     }
                 }
             }
@@ -693,10 +714,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
             initializeSeekBar();
 
+            Paint paint = new Paint();
+            paint.setColor(0x3F96B0FF);
 
             CustomTileOverlay cto = new CustomTileOverlay();
             for (LatLng l : test) {
-                cto.addPoint(l);
+                cto.addPoint(l, paint);
             }
             tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
         }
@@ -710,6 +733,9 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         //Tile Overlay scale equation:
         // 2^(Zoom level)
         private List<newPoint> points = new ArrayList<newPoint>();
+        private List<Paint> paintColor = new ArrayList<Paint>();
+
+
         public final int TILE_SIZE_DP = 256;
         public final int mScaleFactor = 2;
         private MercatorProjection mercatorprojection = new MercatorProjection(TILE_SIZE_DP);
@@ -717,15 +743,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         //public final Bitmap bitmap;
         //public final Canvas canvas = new Canvas(bitmap);
 
-
-        //May not need?
-        //Stuff into getTile if not needed
-        //public CustomTileOverlay(Context context){
-
-        //Canvas canvas = new Canvas(bitmap);
-        //Paint paint = new Paint();
-        //paint.setColor(0x7F96B0FF);
-        //}
 
         @Override
         public Tile getTile(int x, int y, int zoom) {
@@ -746,15 +763,27 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             Paint exteriorPaint = new Paint();
             Paint interiorPaint = new Paint();
-            //TODO: Different Colour circles as they expand outwards
-            //exteriorPaint.setColor(0x7F96B0FF);
+
             exteriorPaint.setColor(0x3F96B0FF);
             interiorPaint.setColor(0x7F45E3C1);
 
+            /*
             for (newPoint p : points) {
                 canvas.drawCircle((float) p.x, (float) p.y, 0.0005f, interiorPaint);
                 canvas.drawCircle((float) p.x, (float) p.y, 0.001f, exteriorPaint);
+            }*/
+            /*
+            while(itrPoints.hasNext() && itrPaint.hasNext()){
+                newPoint i = itrPoints.next();
+                Paint j = itrPaint.next();
+                canvas.drawCircle((float) i.x, (float) i.y, 0.001f, j);
+                Log.v("Circle", "" + i + j);
+            }*/
+            for(int i = 0; i < points.size(); i++){
+                canvas.drawCircle((float) points.get(i).x, (float) points.get(i).y, 0.001f, paintColor.get(i));
+                //Log.d("Color", "" + paintColor.get(i).getColor());
             }
+
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
             //byte[] bitmapData = stream.toByteArray();
@@ -763,9 +792,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             return new Tile(dimension, dimension, stream.toByteArray());
         }
 
-        public void addPoint(LatLng pos) {
+        public void addPoint(LatLng pos, Paint paint) {
             //newPoint p = MercatorProjection(pos);
             points.add(mercatorprojection.toPoint(pos));
+            paintColor.add(paint);
+
         }
 
         public class MercatorProjection {
