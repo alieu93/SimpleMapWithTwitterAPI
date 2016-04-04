@@ -10,7 +10,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -38,7 +37,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Tile;
 import com.google.android.gms.maps.model.TileOverlay;
@@ -51,11 +49,9 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -66,14 +62,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
     RelativeLayout relative;
@@ -81,46 +72,28 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     private SeekBar seekBar1;
     private SeekBar seekBar2;
     private TextView textView;
-    int upperRange;
-
 
     //For drawer
     private ListView mDrawerList;
     private DrawerLayout mDrawerLayout;
     private ArrayAdapter<String> mAdapter;
 
-
-    LatLng UOIT = new LatLng(43.945791, -78.894689);
-
-    List<String> listTrends = new ArrayList<String>();
-    List<String> listDates = new ArrayList<String>();
-
     List<String> sortedUnique;
 
     Map<String, ArrayList<LatLng>> tweetMap = new HashMap<String, ArrayList<LatLng>>();
 
-
-
-    Set<String> unique;
     Set<String> uniqueDates = new HashSet<String>();
-    Set<String> uniqueTrends;// = new HashSet<String>();
 
-    //JSON created to store the coordinates under dates
-    JSONObject tweets = new JSONObject();
     TileOverlay tile;
 
 
     private GoogleMap mMap;
-    LocationManager locManager;// = (LocationManager)getSystemService(LOCATION_SERVICE);
+    LocationManager locManager;
     String provider;
     Location location;
     Criteria criteria = new Criteria();
     List<LatLng> cachePos = new ArrayList<>();
-    LatLng currentPos = new LatLng(44.333304, -94.419696);
 
-    ArrayList<LatLng> newOne = new ArrayList<LatLng>();
-
-    LatLngBounds bounds;
 
 
     @Override
@@ -131,9 +104,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         //Prompts user to enable location services if it is not already enabled
         if (!locManager.isProviderEnabled(gpsProvider)) {
-            /*Toast toast =  Toast.makeText(context, "Location GPS must be enabled!", Toast.LENGTH_LONG);
-            toast.show();*/
-
             //Alert Dialog
             AlertDialog alertDialog = new AlertDialog.Builder(this).create();
             alertDialog.setTitle("Notice");
@@ -147,7 +117,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             });
             alertDialog.show();
         }
-        //mMap = ((SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_twitter_maps2);
         setUpMapIfNeeded();
@@ -163,53 +132,16 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         addDrawer();
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
-
-
         relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
-        //new RetrieveTweets().execute(5);
-        //edit = (EditText) relative.findViewById(R.id.EditText1);
-        //searchButton = (Button) relative.findViewById(R.id.button1);
-        /*searchButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                if (!hasSearched) {
-                    String test = edit.getText().toString();
-                    Toast.makeText(getApplicationContext(), "Searching for: " + test, Toast.LENGTH_SHORT).show();
-                    new RetrieveTweets().execute(test);
-                    hasSearched = true;
-                } else {
-                    if(show) {
-                        tile.setVisible(false);
-                        show = false;
-                    } else {
-                        tile.setVisible(true);
-                        show = true;
-                    }
-
-                }
-
-            }
-        });*/
     }
 
     private void initializeSeekBar(){
         seekBar1 = (SeekBar) findViewById(R.id.seekBar);
         seekBar2 = (SeekBar) findViewById(R.id.seekBar2);
         textView = (TextView) findViewById(R.id.textView);
-
-        //upperRange = seekBar2.getProgress() + seekBar1.getMax();
-        // = seekBar2.getProgress() - seekBar1.getProgress();
-
-        /*
-        seekBar1.setMax(sortedUnique.size()/2);
-        seekBar2.setMax(sortedUnique.size()/2);*/
         seekBar1.setMax(sortedUnique.size());
         seekBar2.setMax(sortedUnique.size());
         seekBar2.setProgress(seekBar2.getMax());
-
-        //final int absoluteTotal = seekBar1.getMax() + seekBar2.getMax();
-
-        //CustomTileOverlay cto = new CustomTileOverlay();
-        //cto.add
 
         seekBar1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             int progress = 0;
@@ -248,8 +180,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
                 progress = progressValue;
-                //upperRange = seekBar2.getProgress() + seekBar1.getMax();
-                //upperRange = seekBar2.getProgress() - seekBar1.getMax();
                 if (seekBar2.getProgress() < seekBar1.getProgress()) {
                     seekBar2.setProgress(seekBar1.getProgress() + 1);
                 } else {
@@ -292,10 +222,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         CustomTileOverlay cto = new CustomTileOverlay();
         mMap.clear();
-        //tile.clearTileCache();
         for(int i=range1; i <= range2; i++){
             Paint paint = new Paint();
-            //double red = (1 - alpha) * 255;
             double red = (255 * singleInterval) / 100;
             double green = (255 * (100 - singleInterval)) / 100;
             double blue = 0;
@@ -307,7 +235,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             if(green < 0) green = 0;
             if(alpha > 255) alpha = 255;
             if(alpha < 50) alpha = 50;
-            //Log.v("Color Calculation", singleInterval + "   " + perInterval + " R:" + (int) red + " G:" + (int) green + "  A:" + (int) alpha);
             paint.setARGB((int) alpha, (int) red, (int) green, (int) blue);
             String date = sortedUnique.get(i);
             ArrayList<LatLng> test = new ArrayList<LatLng>();
@@ -320,10 +247,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         }
         final long elapsedTimeMillis = System.currentTimeMillis() - t0; //TIMER
         Log.v("loadInterval Timer JSON", "" + elapsedTimeMillis);
-        //final long t1 = System.currentTimeMillis(); //TIMER
         tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
-        //final long t1_elapsed = System.currentTimeMillis() - t1; //TIMER
-        //Log.v("loadInterval Tile", t1_elapsed+"");
+
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
@@ -360,7 +285,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
 
     private String convertDate(String tweetDate, boolean withHour) {
-        //Log.v("TimeFormat", tweetDate);
         String[] elements = tweetDate.split("\\s+");
         String month = null;
         switch (elements[1]) {
@@ -401,20 +325,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 month = "12";
                 break;
         }
-        //Month, day, year
-        //String date = month + "-" + elements[2] + "-" + elements[5];
         //Year, Month, Day
         String time = elements[3];
-        //Log.v("Time", time);
         String[] timeElements = time.split(":");
         //HH:MM:SS
-        //Log.v("TimeElements", timeElements[0]+":"+timeElements[1]+":"+timeElements[2]);
         String date;
-        //SimpleDateFormat format;
-        //Calendar cal = Calendar.getInstance();
         if(withHour) {
-            //date = elements[5] + "-" + month + "-" + elements[2] + "-" +
-            //        timeElements[0] + ":" + timeElements[1] + ":" + timeElements[2];
             date = elements[5] + "-" + month + "-" + elements[2] + "-" +
                     timeElements[0];
 
@@ -422,7 +338,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             date = elements[5] + "-" + month + "-" + elements[2];
         }
 
-        //uniqueDates.add(date);
         return date;
     }
 
@@ -475,14 +390,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 break;
 
         }
-        //Log.v("nextdateMethod", format.format(cal.getTime()));
 
         return format.format(cal.getTime());
 
     }
 
     public List<LatLng> loadJSON(int mode, String text) throws JSONException {
-        //String json = null;
         List<LatLng> list = new ArrayList<>();
         boolean torontoCheck = false;
         boolean oshawaCheck = false;
@@ -531,7 +444,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     break;
                 }
 
-                final long torontoTimer = System.nanoTime(); //System.currentTimeMillis(); //TIMER
+                final long torontoTimer = System.nanoTime();//TIMER
                 //Toronto
                 if (!torontoCheck) {
                     if (obj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
@@ -541,7 +454,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             JSONObject coords = new JSONObject(obj.get("coordinates").toString());
                             JSONArray latlng = coords.getJSONArray("coordinates");
 
-                            //Log.v("Tweet Date:", obj.get("created_at").toString());
 
                             //************************
                             //TWITTER USES LONGITUDE THEN LATITUDE
@@ -555,7 +467,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
 
                             String convertedDate = convertDate(obj.get("created_at").toString(), hour);
-                            //listDates.add(convertedDate);
 
                             //Initialize intervals at beginning, first part of if statement should only ever execute at the very beginning
                             if(torontoNextDate == null || torontoCurrentInterval == null){
@@ -572,9 +483,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                     Date nextInterval = format.parse(torontoNextDate);
 
                                     //If the current line has a date equal to the next interval, we set a new interval
-                                    //if(current.after(nextInterval) || current.equals(nextInterval)){
                                     if(current.after(nextInterval)){
-                                        //torontoCurrentInterval = torontoNextDate;
                                         torontoCurrentInterval = convertedDate;
                                         torontoNextDate = getNextDate(convertedDate, mode);
                                         uniqueDates.add(convertedDate);
@@ -597,9 +506,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                     }
                 }
                 final long torontoTimerEnd = System.nanoTime() - torontoTimer; //System.currentTimeMillis() - torontoTimer; //TIMER
-                //Log.v("loadJSON torontoTimer", torontoTimerEnd + " nanoseconds"); //TIMER
 
-                final long oshawaTimer = System.nanoTime(); //System.currentTimeMillis(); //TIMER
+                final long oshawaTimer = System.nanoTime(); //TIMER
                 //Oshawa
                 if (!oshawaCheck) {
                     if (oshObj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
@@ -636,9 +544,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                                     Date nextInterval = format.parse(oshawaNextDate);
 
                                     //If the current line has a date equal to the next interval, we set a new interval
-                                    //if(current.after(nextInterval) || current.equals(nextInterval)){
                                     if(current.after(nextInterval)){
-                                        //oshawaCurrentInterval = oshawaNextDate;
                                         oshawaCurrentInterval = convertedDate;
                                         oshawaNextDate = getNextDate(convertedDate, mode);
                                         uniqueDates.add(oshawaCurrentInterval);
@@ -658,13 +564,11 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             }
                         }
                         final long oshawaTimerEnd = System.nanoTime() - oshawaTimer; //System.currentTimeMillis() - oshawaTimer;
-                        //Log.v("loadJSON oshawaTimer", oshawaTimerEnd + " nanoseconds");
                     }
                 }
             }
             final long jsonRead_t1 = System.currentTimeMillis() - jsonRead_t0; //TIMER
             Log.v("loadJSON Timer", jsonRead_t1 + ""); //TIMER
-            //Log.v("Read JSON:", "Success");
         } catch (IOException ex) {
             ex.printStackTrace();
             return null;
@@ -675,9 +579,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         for (String s : sortedUnique) {
             Log.v("Unique Dates", s);
         }
-        //Log.v("Num of Coords", "" + list.size());
-        //Log.v("JSON", "" + tweets);
-
         //Get all elements under a specified date
         Log.v("HashMap", tweetMap.get(sortedUnique.get(0)).toString());
         Log.v("HashMap", "" + tweetMap.keySet());
@@ -693,7 +594,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         protected List<LatLng> doInBackground(Integer... test) {
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run() {
-                    //Toast.makeText(context, "Retrieving up to " + limit + " tweets", Toast.LENGTH_LONG).show();
                     Toast.makeText(context, "Retrieving tweets.", Toast.LENGTH_LONG).show();
                 }
             });
@@ -709,8 +609,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
         protected void onPostExecute(List<LatLng> test) {
             Log.v("Retrieval:", "Got " + test.size() + " tweets");
-            //circleToMap(cachePos);
-            //new TweetOverlay().draw(test);
             Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
             initializeSeekBar();
 
@@ -726,12 +624,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     }
 
     private class CustomTileOverlay implements TileProvider {
-        //Mercator Projection Equation
-        //X = longitude / 360; (?)
-        //Y = 1/2 * log((1+sin(lat))/(1-sin(lat)) /  -(2*pi)  )
-
-        //Tile Overlay scale equation:
-        // 2^(Zoom level)
         private List<newPoint> points = new ArrayList<newPoint>();
         private List<Paint> paintColor = new ArrayList<Paint>();
 
@@ -740,8 +632,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         public final int mScaleFactor = 2;
         private MercatorProjection mercatorprojection = new MercatorProjection(TILE_SIZE_DP);
         private int dimension = TILE_SIZE_DP * mScaleFactor;
-        //public final Bitmap bitmap;
-        //public final Canvas canvas = new Canvas(bitmap);
 
 
         @Override
@@ -751,12 +641,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             Matrix matrix = new Matrix();
             matrix.postScale(scale, scale);
-            //matrix.postTranslate(-x * TILE_SIZE_DP * mScaleFactor, -y * TILE_SIZE_DP * mScaleFactor);
             matrix.postTranslate(-x * dimension, -y * dimension);
 
-            /*Bitmap bitmap;
-            bitmap = Bitmap.createBitmap((int) (TILE_SIZE_DP * mScaleFactor),
-                    (int) (TILE_SIZE_DP * mScaleFactor), Bitmap.Config.ARGB_8888);*/
             Bitmap bitmap = Bitmap.createBitmap(dimension, dimension, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             canvas.setMatrix(matrix);
@@ -767,33 +653,17 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             exteriorPaint.setColor(0x3F96B0FF);
             interiorPaint.setColor(0x7F45E3C1);
 
-            /*
-            for (newPoint p : points) {
-                canvas.drawCircle((float) p.x, (float) p.y, 0.0005f, interiorPaint);
-                canvas.drawCircle((float) p.x, (float) p.y, 0.001f, exteriorPaint);
-            }*/
-            /*
-            while(itrPoints.hasNext() && itrPaint.hasNext()){
-                newPoint i = itrPoints.next();
-                Paint j = itrPaint.next();
-                canvas.drawCircle((float) i.x, (float) i.y, 0.001f, j);
-                Log.v("Circle", "" + i + j);
-            }*/
+
             for(int i = 0; i < points.size(); i++){
                 canvas.drawCircle((float) points.get(i).x, (float) points.get(i).y, 0.001f, paintColor.get(i));
-                //Log.d("Color", "" + paintColor.get(i).getColor());
             }
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            //byte[] bitmapData = stream.toByteArray();
-            //return new Tile((int) (TILE_SIZE_DP * mScaleFactor),
-            //       (int) (TILE_SIZE_DP * mScaleFactor), stream.toByteArray());
             return new Tile(dimension, dimension, stream.toByteArray());
         }
 
         public void addPoint(LatLng pos, Paint paint) {
-            //newPoint p = MercatorProjection(pos);
             points.add(mercatorprojection.toPoint(pos));
             paintColor.add(paint);
 
@@ -813,16 +683,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                 return new newPoint(x * worldWidth, y * worldWidth);
             }
         }
-
-        /*
-        public newPoint MercatorProjection(LatLng pos){
-            double x = pos.longitude / 360 + 0.5;
-            double y = 0.5 * Math.log((1+Math.sin(Math.toRadians(pos.latitude)))
-                    / (1-Math.sin(Math.toRadians(pos.latitude)))) / (-2 * Math.PI) + 0.5;
-
-            //Point only accepts int and not double?
-            //return new Point(x * TILE_SIZE_DP, y * TILE_SIZE_DP);
-            return new newPoint(x* TILE_SIZE_DP, y * TILE_SIZE_DP);*/
     }
 
 
@@ -835,10 +695,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             this.y = y;
         }
     }
-
-        private Point toPixels(LatLng latlng) {
-            return mMap.getProjection().toScreenLocation(latlng);
-        }
 
     public class Tweets{
         private Double Lat;
@@ -853,11 +709,9 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         public Double getLat(){
             return Lat;
         }
-
         public Double getLng(){
             return Lng;
         }
-
         public String toString(){
             return Lat + ", " + Lng;
         }
@@ -899,7 +753,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
         provider = locManager.getBestProvider(criteria, true); // Name for best provider
         //Check for permissions if they are granted
         if((ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) &&
@@ -916,7 +769,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
             //Controls the camera so it would zoom into current position
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 13);
-            //mMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos));
             mMap.animateCamera(cameraUpdate);
         }
     }

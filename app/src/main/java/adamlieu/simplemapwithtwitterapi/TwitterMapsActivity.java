@@ -40,6 +40,7 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.BufferedInputStream;
@@ -446,7 +447,11 @@ public class TwitterMapsActivity extends FragmentActivity {
             //LatLng currentPos = new LatLng(43.945791, -78.894689); //UOIT
             LatLng currentPos = new LatLng(43.6532, -79.3832); //Toronto
             //Add a marker on the map with the current position
-            mMap.addMarker(new MarkerOptions().position(currentPos).title("Toronto"));
+            Marker toronto = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(43.6532, -79.3832))
+                    .title("Toronto"));
+
+            toronto.getId();
 
             //Controls the camera so it would zoom into current position
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 1);
