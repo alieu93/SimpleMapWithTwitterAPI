@@ -67,7 +67,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
-    RelativeLayout relative;
+    //RelativeLayout relative;
 
     private SeekBar seekBar1;
     private SeekBar seekBar2;
@@ -86,13 +86,13 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     TileOverlay tile;
 
-
     private GoogleMap mMap;
     LocationManager locManager;
     String provider;
     Location location;
     Criteria criteria = new Criteria();
-    List<LatLng> cachePos = new ArrayList<>();
+
+    //List<LatLng> cachePos = new ArrayList<>();
 
 
 
@@ -132,9 +132,60 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         addDrawer();
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
-        relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
+        //relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
     }
 
+    /**
+     * AddDrawer():
+     * Function for initializing the navigation drawer
+     */
+    private void addDrawer(){
+        String[] testArray = { "6 hours", "12 hours", "1 day", "1 week", "All"};
+        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, testArray);
+        mDrawerList.setAdapter(mAdapter);
+        mDrawerLayout.openDrawer(Gravity.LEFT);
+    }
+
+    /**
+     * DrawerItemClickListener: class that runs whenever an option is selected on the drawer
+     */
+    private class DrawerItemClickListener implements ListView.OnItemClickListener {
+        Context context = getApplicationContext();
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id){
+            //Toast.makeText(context, "Working!", Toast.LENGTH_LONG).show();
+            switch(position) {
+                case 0:
+                    new RetrieveTweets().execute(1);
+                    mDrawerLayout.closeDrawers();
+                    break;
+                case 1:
+                    new RetrieveTweets().execute(2);
+                    mDrawerLayout.closeDrawers();
+                    break;
+                case 2:
+                    new RetrieveTweets().execute(3);
+                    mDrawerLayout.closeDrawers();
+                    break;
+                case 3:
+                    new RetrieveTweets().execute(4);
+                    mDrawerLayout.closeDrawers();
+                    break;
+                case 4:
+                    new RetrieveTweets().execute(5);
+                    mDrawerLayout.closeDrawers();
+                    break;
+            }
+
+        }
+    }
+
+    /**
+     * initializeSeekBar():
+     * Function for initializing the seekbars by setting the maximum values for both of them.
+     * Serves as a pseudo-two way seekbar, seekbar1 is the lower limit and seekbar2 is the upper limit
+     * Upon any kind of change in the seekbar value, it redraws the map circles
+     */
     private void initializeSeekBar(){
         seekBar1 = (SeekBar) findViewById(R.id.seekBar);
         seekBar2 = (SeekBar) findViewById(R.id.seekBar2);
@@ -142,6 +193,10 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         seekBar1.setMax(sortedUnique.size());
         seekBar2.setMax(sortedUnique.size());
         seekBar2.setProgress(seekBar2.getMax());
+        loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
+        textView.setText("Range: " + sortedUnique.get(seekBar1.getProgress()) + " to " + sortedUnique.get(seekBar2.getProgress() - 1)
+                + "   " + seekBar1.getProgress() + "---" + seekBar2.getProgress());
+
 
         seekBar1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             int progress = 0;
@@ -150,7 +205,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
                 progress = progressValue;
-                if(seekBar2.getProgress() < seekBar1.getProgress()){
+                if (seekBar2.getProgress() < seekBar1.getProgress()) {
                     seekBar1.setProgress(seekBar2.getProgress());
                     seekBar2.setProgress(seekBar2.getProgress() + 1);
                 } else {
@@ -166,11 +221,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
                 textView.setText("Range: " + sortedUnique.get(seekBar1.getProgress()) + " to " + sortedUnique.get(seekBar2.getProgress() - 1)
                         + "   " + seekBar1.getProgress() + "---" + seekBar2.getProgress());
-                try {
-                    loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
             }
         });
 
@@ -196,24 +247,19 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
                 textView.setText("Range: " + sortedUnique.get(seekBar1.getProgress()) + " to " + sortedUnique.get(seekBar2.getProgress() - 1)
                         + "   " + seekBar1.getProgress() + "---" + seekBar2.getProgress());
-                try {
-                    loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
             }
         });
 
 
     }
-    private void addDrawer(){
-        String[] testArray = { "6 hours", "12 hours", "1 day", "1 week", "All"};
-        mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, testArray);
-        mDrawerList.setAdapter(mAdapter);
-        mDrawerLayout.openDrawer(Gravity.LEFT);
-    }
 
-    private void loadInterval(int range1, int range2) throws JSONException{
+    /**
+     * loadInterval: Function is used to draw the points on the map using an upper and lower limit
+     * @param range1: lower limit of the time interval
+     * @param range2: upper limit of the time interval
+     */
+    private void loadInterval(int range1, int range2) {
         final long t0 = System.currentTimeMillis(); //TIMER
 
         int intervalRange = range2 - range1;
@@ -223,24 +269,26 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         CustomTileOverlay cto = new CustomTileOverlay();
         mMap.clear();
         for(int i=range1; i <= range2; i++){
+            // Determines the colour for each time interval
             Paint paint = new Paint();
             double red = (255 * singleInterval) / 100;
             double green = (255 * (100 - singleInterval)) / 100;
             double blue = 0;
             double alpha = (255 * singleInterval) / 100;
-
             if(red > 255) red = 255;
             if(red < 0) red = 0;
             if(green > 255) green = 255;
             if(green < 0) green = 0;
-            if(alpha > 255) alpha = 255;
-            if(alpha < 50) alpha = 50;
+            //if(alpha > 255) alpha = 255;
+            if (alpha > 200) alpha = 200;
+            if(alpha < 60) alpha = 60;
             paint.setARGB((int) alpha, (int) red, (int) green, (int) blue);
             String date = sortedUnique.get(i);
             ArrayList<LatLng> test = new ArrayList<LatLng>();
+
             test = tweetMap.get(date);
 
-            for(LatLng l : test){
+            for(LatLng l : test) {
                 cto.addPoint(l, paint);
             }
             singleInterval += perInterval;
@@ -251,38 +299,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
     }
 
-    private class DrawerItemClickListener implements ListView.OnItemClickListener {
-        Context context = getApplicationContext();
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id){
-            Toast.makeText(context, "Working!", Toast.LENGTH_LONG).show();
-
-            switch(position) {
-                case 0:
-                    new RetrieveTweets().execute(1);
-                    mDrawerLayout.closeDrawers();
-                    break;
-                case 1:
-                     new RetrieveTweets().execute(2);
-                    mDrawerLayout.closeDrawers();
-                    break;
-                case 2:
-                    new RetrieveTweets().execute(3);
-                    mDrawerLayout.closeDrawers();
-                    break;
-                case 3:
-                    new RetrieveTweets().execute(4);
-                    mDrawerLayout.closeDrawers();
-                    break;
-                case 4:
-                    new RetrieveTweets().execute(5);
-                    mDrawerLayout.closeDrawers();
-                    break;
-            }
-
-        }
-    }
-
+    /**
+     * convertDate
+     * @param tweetDate: The string from the JSON file
+     * @param withHour: Whether or not the hour should be included, this is for the time intervals such as 6 hour and 12 hour
+     * @return: A formatted string that can be used for later
+     */
 
     private String convertDate(String tweetDate, boolean withHour) {
         String[] elements = tweetDate.split("\\s+");
@@ -341,6 +363,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         return date;
     }
 
+    /**
+     * getNextDate
+     * @param date: The current time interval
+     * @param mode: Determines the time interval (6 hours, 12 hours, 1 day, 1 week)
+     * @return: The next time interval in the series
+     */
     private String getNextDate(String date, int mode){
         //Hourly, 3 hours, daily, weekly, all
         //yyyy-mm-dd-hh
@@ -394,6 +422,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         return format.format(cal.getTime());
 
     }
+
 
     public List<LatLng> loadJSON(int mode, String text) throws JSONException {
         List<LatLng> list = new ArrayList<>();
@@ -463,8 +492,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
                             double lng = Double.parseDouble(latlng.get(0).toString());
                             LatLng pos = new LatLng(lat, lng);
                             list.add(pos);
-
-
 
                             String convertedDate = convertDate(obj.get("created_at").toString(), hour);
 
@@ -587,18 +614,20 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     }
 
 
-
+    /**
+     * Class that performs background operations by reading the text files, parsing the JSONs and updating the UI thread
+     */
     private class RetrieveTweets extends AsyncTask<Integer, Integer, List<LatLng>> {
         Context context = getApplicationContext();
 
         protected List<LatLng> doInBackground(Integer... test) {
+            List<LatLng> cachePos = new ArrayList<>();
             TwitterMapsActivity2.this.runOnUiThread(new Runnable() {
                 public void run() {
                     Toast.makeText(context, "Retrieving tweets.", Toast.LENGTH_LONG).show();
                 }
             });
             try {
-                Log.v("TestMode", ""+test[0]);
                 cachePos = loadJSON(test[0], "");
             } catch (JSONException ex) {
                 ex.printStackTrace();
@@ -611,112 +640,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             Log.v("Retrieval:", "Got " + test.size() + " tweets");
             Toast.makeText(context, "Retrieval complete, displaying " + test.size() + " Tweets.", Toast.LENGTH_SHORT).show();
             initializeSeekBar();
-
-            Paint paint = new Paint();
-            paint.setColor(0x3F96B0FF);
-
-            CustomTileOverlay cto = new CustomTileOverlay();
-            for (LatLng l : test) {
-                cto.addPoint(l, paint);
-            }
-            tile = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(cto));
         }
     }
-
-    private class CustomTileOverlay implements TileProvider {
-        private List<newPoint> points = new ArrayList<newPoint>();
-        private List<Paint> paintColor = new ArrayList<Paint>();
-
-
-        public final int TILE_SIZE_DP = 256;
-        public final int mScaleFactor = 2;
-        private MercatorProjection mercatorprojection = new MercatorProjection(TILE_SIZE_DP);
-        private int dimension = TILE_SIZE_DP * mScaleFactor;
-
-
-        @Override
-        public Tile getTile(int x, int y, int zoom) {
-
-            float scale = (float) Math.pow(2, zoom) * mScaleFactor;
-
-            Matrix matrix = new Matrix();
-            matrix.postScale(scale, scale);
-            matrix.postTranslate(-x * dimension, -y * dimension);
-
-            Bitmap bitmap = Bitmap.createBitmap(dimension, dimension, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            canvas.setMatrix(matrix);
-
-            Paint exteriorPaint = new Paint();
-            Paint interiorPaint = new Paint();
-
-            exteriorPaint.setColor(0x3F96B0FF);
-            interiorPaint.setColor(0x7F45E3C1);
-
-
-            for(int i = 0; i < points.size(); i++){
-                canvas.drawCircle((float) points.get(i).x, (float) points.get(i).y, 0.001f, paintColor.get(i));
-            }
-
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            return new Tile(dimension, dimension, stream.toByteArray());
-        }
-
-        public void addPoint(LatLng pos, Paint paint) {
-            points.add(mercatorprojection.toPoint(pos));
-            paintColor.add(paint);
-
-        }
-
-        public class MercatorProjection {
-            final double worldWidth;
-
-            public MercatorProjection(final double worldwidth) {
-                worldWidth = worldwidth;
-            }
-
-            public newPoint toPoint(final LatLng latlng) {
-                double x = latlng.longitude / 360 + 0.5;
-                double y = 0.5 * Math.log((1 + Math.sin(Math.toRadians(latlng.latitude)))
-                        / (1 - Math.sin(Math.toRadians(latlng.latitude)))) / (-2 * Math.PI) + 0.5;
-                return new newPoint(x * worldWidth, y * worldWidth);
-            }
-        }
-    }
-
-
-    public class newPoint {
-        public double x;
-        public double y;
-
-        public newPoint(double x, double y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
-
-    public class Tweets{
-        private Double Lat;
-        private Double Lng;
-        private Collection<LatLng> coordinates = Collections.emptyList();
-
-        public Tweets(Double Lat, Double Lng){
-            this.Lat = Lat;
-            this.Lng = Lng;
-        }
-
-        public Double getLat(){
-            return Lat;
-        }
-        public Double getLng(){
-            return Lng;
-        }
-        public String toString(){
-            return Lat + ", " + Lng;
-        }
-    }
-
 
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
@@ -765,7 +690,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             //LatLng currentPos = new LatLng(location.getLatitude(), location.getLongitude());
             LatLng currentPos = new LatLng(43.945791, -78.894689);
             //Add a marker on the map with the current position
-            mMap.addMarker(new MarkerOptions().position(currentPos).title("Here"));
+            //mMap.addMarker(new MarkerOptions().position(currentPos).title("Here"));
 
             //Controls the camera so it would zoom into current position
             CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(currentPos, 13);
