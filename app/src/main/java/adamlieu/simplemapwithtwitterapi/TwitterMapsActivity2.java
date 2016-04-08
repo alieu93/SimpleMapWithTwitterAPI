@@ -67,8 +67,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class TwitterMapsActivity2 extends FragmentActivity {
-    //RelativeLayout relative;
 
+    //For seekbar
     private SeekBar seekBar1;
     private SeekBar seekBar2;
     private TextView textView;
@@ -78,10 +78,12 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     private DrawerLayout mDrawerLayout;
     private ArrayAdapter<String> mAdapter;
 
-    List<String> sortedUnique;
-
+    //Used to store the time intervals and the coordinates under those dates
     Map<String, ArrayList<LatLng>> tweetMap = new HashMap<String, ArrayList<LatLng>>();
 
+    //Contains list of unique time intervals, used primarily to sift through the
+    //stored dates and coordinates
+    List<String> sortedUnique;
     Set<String> uniqueDates = new HashSet<String>();
 
     TileOverlay tile;
@@ -91,10 +93,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
     String provider;
     Location location;
     Criteria criteria = new Criteria();
-
-    //List<LatLng> cachePos = new ArrayList<>();
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,7 +130,6 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         addDrawer();
         mDrawerList.setOnItemClickListener(new DrawerItemClickListener());
-        //relative = (RelativeLayout) findViewById(R.id.RelativeLayout1);
     }
 
     /**
@@ -475,6 +472,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
                 final long torontoTimer = System.nanoTime();//TIMER
                 //Toronto
+                //Reads toronto.tweets file, parses the creation date and coordinates and then stores them
+                //Formats the date so we can calculate the next interval and know when to store those coordinates
                 if (!torontoCheck) {
                     if (obj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
                         if (!obj.isNull("coordinates")) {
@@ -536,6 +535,8 @@ public class TwitterMapsActivity2 extends FragmentActivity {
 
                 final long oshawaTimer = System.nanoTime(); //TIMER
                 //Oshawa
+                //Reads oshawa.tweets file, parses the creation date and coordinates and then stores them
+                //Formats the date so we can calculate the next interval and know when to store those coordinates
                 if (!oshawaCheck) {
                     if (oshObj.get("text").toString().toLowerCase().contains(text.toLowerCase())) {
                         if (!oshObj.isNull("coordinates")) {
