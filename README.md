@@ -3,6 +3,8 @@
 # Description:
 Honours Thesis Project for April 2016.
 
+This project targets Android version 4.4.2 (Kitkat, API 19).
+
 # Installation:
 Import as a project through Android Studio and run on an Android Device. 
 Requires two files called "toronto.tweets" and "oshawa.tweets", download them from here:
