@@ -190,7 +190,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
         seekBar1 = (SeekBar) findViewById(R.id.seekBar);
         seekBar2 = (SeekBar) findViewById(R.id.seekBar2);
         textView = (TextView) findViewById(R.id.textView);
-        seekBar1.setMax(sortedUnique.size());
+        seekBar1.setMax(sortedUnique.size() - 1);
         seekBar2.setMax(sortedUnique.size());
         seekBar2.setProgress(seekBar2.getMax());
         loadInterval(seekBar1.getProgress(), seekBar2.getProgress() - 1);
@@ -205,7 +205,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
                 progress = progressValue;
-                if (seekBar2.getProgress() < seekBar1.getProgress()) {
+                if (seekBar2.getProgress() <= seekBar1.getProgress()) {
                     seekBar1.setProgress(seekBar2.getProgress());
                     seekBar2.setProgress(seekBar2.getProgress() + 1);
                 } else {
@@ -231,7 +231,7 @@ public class TwitterMapsActivity2 extends FragmentActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progressValue, boolean fromUser) {
                 progress = progressValue;
-                if (seekBar2.getProgress() < seekBar1.getProgress()) {
+                if (seekBar2.getProgress() <= seekBar1.getProgress()) {
                     seekBar2.setProgress(seekBar1.getProgress() + 1);
                 } else {
                     seekBar2.setProgress(progress);

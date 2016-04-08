@@ -19,7 +19,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name=".TwitterMapsActivity2"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -42,10 +42,6 @@
         <activity
             android:name=".TweetFragment"
             android:label="@string/title_activity_tweet_fragment" >
-        </activity>
-        <activity
-            android:name=".TwitterMapsActivity2"
-            android:label="@string/title_activity_twitter_maps2" >
         </activity>
         <activity
             android:name=".TestMapsActivity"
