@@ -1,4 +1,4 @@
-# SimpleMapWithTwitterAPI
+# UOIT-TwitterMap-Thesis-2016
 
 # Description:
 Honours Thesis Project for April 2016.
